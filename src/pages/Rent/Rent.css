@@ -1,0 +1,9 @@
+@import '../Marketplace/BuySell.css';
+
+.sell-btn {
+    background: #4caf50;
+}
+
+.sell-btn:hover {
+    background: #43a047;
+}

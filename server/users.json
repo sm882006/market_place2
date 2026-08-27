@@ -1,0 +1,37 @@
+[
+  {
+    "id": "1781077082645",
+    "username": "utk",
+    "email": "utkarashmiraje@gmail.com",
+    "password": "$2b$10$2nT0ojNbNJElLQpppbDYt.a.PYCd.vvWi0kDS9MRoVG9Sq0CF0UZa",
+    "createdAt": "2026-06-10T07:38:02.645Z"
+  },
+  {
+    "id": "1781077291630",
+    "username": "ami",
+    "email": "amisha@gmail.com",
+    "password": "$2b$10$kHa8k7gfMAo1onStCeehreaMNj6nVf4xCc1bi9F9AJyaDYdzO01Yi",
+    "createdAt": "2026-06-10T07:41:31.630Z"
+  },
+  {
+    "id": "1781350631865",
+    "username": "testuser",
+    "email": "testuser@gmail.com",
+    "password": "$2b$10$3xXqfas83wA29ZE.yzZXNuGEuyCEfV00QqyPAbMHlc68mAgEmFYua",
+    "createdAt": "2026-06-13T11:37:11.865Z"
+  },
+  {
+    "id": "1781436216013",
+    "username": "testuser_543",
+    "email": "testuser_543@example.com",
+    "password": "$2b$10$YedkGv1oprU2ICcMqCwTQOKfXktEBI1op0EQmP0Y6c18OEfzNkLDm",
+    "createdAt": "2026-06-14T11:23:36.013Z"
+  },
+  {
+    "id": "1787860934139",
+    "username": "sumit",
+    "email": "utkarshmiraje@gmail.com",
+    "password": "$2b$10$FA/bawdII9iju9MYqIASMeUlinn3hCvCI2S0qyb6YyCKTISqzjCy6",
+    "createdAt": "2026-08-27T20:02:14.139Z"
+  }
+]

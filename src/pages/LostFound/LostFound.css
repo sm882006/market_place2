@@ -1,0 +1,269 @@
+/* ─── Lost & Found Page ─── */
+.lostfound-page {
+    min-height: 100vh;
+    padding: 40px 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+    background: var(--home-bg-gradient, linear-gradient(145deg, #d4eaf0 0%, #b8dde6 40%, #a8d5e2 70%, #c2e2e8 100%));
+    position: relative;
+}
+
+.lostfound-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 30px;
+}
+
+.lostfound-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--home-text, #1a4a55);
+    background: linear-gradient(135deg, var(--home-accent-light, #8b5cf6), var(--home-accent, #6366f1));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* ─── Report Button ─── */
+.report-btn {
+    padding: 12px 28px;
+    border: none;
+    border-radius: 30px;
+    background: linear-gradient(135deg, #8b5cf6, #6366f1);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.25);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.report-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+}
+
+.report-btn:active {
+    transform: translateY(0);
+}
+
+/* ─── Search & Filter Controls ─── */
+.lostfound-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 30px;
+}
+
+.lostfound-controls input[type="text"] {
+    flex: 1;
+    min-width: 200px;
+    padding: 12px 20px;
+    border-radius: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(8px);
+    font-size: 0.95rem;
+    color: var(--home-text);
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.lostfound-controls input[type="text"]::placeholder {
+    color: rgba(26, 74, 85, 0.5);
+}
+
+.lostfound-controls input[type="text"]:focus {
+    background: rgba(255, 255, 255, 0.7);
+    border-color: var(--home-accent-light);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+.lostfound-controls select {
+    padding: 12px 20px;
+    border-radius: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(8px);
+    font-size: 0.95rem;
+    color: var(--home-text);
+    outline: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.lostfound-controls select:focus {
+    background: rgba(255, 255, 255, 0.7);
+    border-color: var(--home-accent-light);
+}
+
+/* ─── Found Items Grid ─── */
+.found-items {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 28px;
+}
+
+.found-card {
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(26, 74, 85, 0.06);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-color 0.4s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.found-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 48px rgba(26, 74, 85, 0.12);
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+.found-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    background: rgba(255, 255, 255, 0.3);
+    transition: transform 0.3s ease;
+}
+
+.found-card:hover img {
+    transform: scale(1.02);
+}
+
+.found-card .card-body {
+    padding: 18px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.found-card h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--home-text, #1a4a55);
+    margin: 0 0 8px 0;
+}
+
+.found-card .meta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.found-card .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: rgba(26, 74, 85, 0.7);
+}
+
+.found-card .meta-item .icon {
+    font-size: 1.1rem;
+}
+
+.found-card .status {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+    width: fit-content;
+}
+
+.found-card .status.unclaimed {
+    background: rgba(245, 158, 11, 0.15);
+    color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.found-card .status.claimed {
+    background: rgba(16, 185, 129, 0.15);
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.found-card button {
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #8b5cf6, #6366f1);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    margin-top: auto;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+.found-card button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
+}
+
+.found-card button:active {
+    transform: translateY(0);
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+    .lostfound-page {
+        padding: 24px 16px;
+    }
+
+    .lostfound-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .lostfound-header h1 {
+        font-size: 1.8rem;
+        text-align: center;
+    }
+
+    .report-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .lostfound-controls {
+        flex-direction: column;
+    }
+
+    .lostfound-controls input[type="text"],
+    .lostfound-controls select {
+        width: 100%;
+    }
+
+    .found-items {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .found-items {
+        grid-template-columns: 1fr;
+    }
+}

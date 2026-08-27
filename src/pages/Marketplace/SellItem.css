@@ -1,0 +1,149 @@
+.sell-page {
+    min-height: 100vh;
+    background: linear-gradient(
+        135deg,
+        #d9eef2,
+        #c8e3ea,
+        #b7d8e0
+    );
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    padding: 40px;
+}
+
+.sell-card {
+    width: 650px;
+
+    background: rgba(255, 255, 255, 0.35);
+
+    backdrop-filter: blur(15px);
+
+    border: 1px solid rgba(255, 255, 255, 0.4);
+
+    border-radius: 25px;
+
+    padding: 35px;
+
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.08);
+
+    animation: fadeIn 0.5s ease;
+}
+
+.sell-card h2 {
+    text-align: center;
+
+    color: #244b57;
+
+    margin-bottom: 25px;
+
+    font-size: 2rem;
+
+    font-weight: 700;
+}
+
+.sell-card form {
+    display: flex;
+    flex-direction: column;
+
+    gap: 14px;
+}
+
+.sell-card label {
+    color: #244b57;
+
+    font-weight: 600;
+
+    font-size: 0.95rem;
+}
+
+.sell-card input,
+.sell-card textarea,
+.sell-card select {
+    padding: 12px 15px;
+
+    border: 1px solid rgba(255, 255, 255, 0.5);
+
+    border-radius: 12px;
+
+    background: rgba(255, 255, 255, 0.7);
+
+    font-size: 0.95rem;
+
+    outline: none;
+
+    transition: all 0.3s ease;
+}
+
+.sell-card textarea {
+    min-height: 100px;
+
+    resize: vertical;
+}
+
+.sell-card input:focus,
+.sell-card textarea:focus,
+.sell-card select:focus {
+    border-color: #6f6cf3;
+
+    box-shadow:
+        0 0 0 4px rgba(111, 108, 243, 0.15);
+}
+
+.sell-card input[type="file"] {
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+
+.sell-card button {
+    margin-top: 15px;
+
+    padding: 14px;
+
+    border: none;
+
+    border-radius: 14px;
+
+    background: linear-gradient(
+        135deg,
+        #6f6cf3,
+        #8f7cff
+    );
+
+    color: white;
+
+    font-size: 1rem;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: all 0.3s ease;
+}
+
+.sell-card button:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 8px 20px rgba(111, 108, 243, 0.3);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(25px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+*{
+    font-family: 'Poppins', sans-serif;
+}

@@ -1,0 +1,13 @@
+get code:
+git pull origin main
+
+push code:
+git add .
+git commit -m "updated project"
+git push
+
+run backend server:
+npm run server
+
+run frontend dev server:
+npm run dev
