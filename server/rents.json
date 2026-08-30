@@ -1,0 +1,22 @@
+[
+  {
+    "id": "rent_1",
+    "name": "Engineering Drawing Board & Mini Drafter",
+    "category": "Lab & Drawing Kits",
+    "rentPerDay": 30,
+    "deposit": 300,
+    "availableFrom": "2026-06-01",
+    "availableTill": "2026-12-31",
+    "condition": "Good",
+    "contact": "9876543210",
+    "description": "Clean drawing board with mini drafter, clamp, and storage bag. Ready for semester practicals.",
+    "photo": "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?q=80&w=400&auto=format&fit=crop",
+    "ownerId": "1781077291630",
+    "ownerUsername": "ami",
+    "status": "available",
+    "renterId": null,
+    "renterUsername": null,
+    "createdAt": "2026-06-13T10:20:00.000Z",
+    "rentedAt": null
+  }
+]

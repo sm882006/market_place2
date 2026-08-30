@@ -33,5 +33,47 @@
     "email": "utkarshmiraje@gmail.com",
     "password": "$2b$10$FA/bawdII9iju9MYqIASMeUlinn3hCvCI2S0qyb6YyCKTISqzjCy6",
     "createdAt": "2026-08-27T20:02:14.139Z"
+  },
+  {
+    "id": "1787917132716",
+    "username": "parth",
+    "email": "parth@gmail.com",
+    "password": "$2b$10$vdjHZPdUEbv3kB2HeGtRNeGCbw1kiVH1.tgo/7I20lQuiMaS7LPtG",
+    "createdAt": "2026-08-28T11:38:52.716Z"
+  },
+  {
+    "id": "1788115938642",
+    "username": "utkarsh",
+    "email": "utkarsh@gmail.com",
+    "password": "$2b$10$crKHdw1GXCdhg0aMYBx5W.4wlYJa/n/rJixx1tc1fJo93h6q4j74O",
+    "createdAt": "2026-08-30T18:52:18.642Z"
+  },
+  {
+    "id": "1788117479483",
+    "username": "alice_1788117479291",
+    "email": "alice_1788117479291@pict.edu",
+    "password": "$2b$10$WE0ZJUCPcr355Bssn5fK0O12CJcZJBizf7c8Y9hg34Up.W5nvWhaW",
+    "createdAt": "2026-08-30T19:17:59.483Z"
+  },
+  {
+    "id": "1788117479650",
+    "username": "bob_1788117479496",
+    "email": "bob_1788117479496@pict.edu",
+    "password": "$2b$10$XDiQ571BALOBbcvxDOsnvelF5vSMc7uN6eXQThHoIjUs8No5hKgs2",
+    "createdAt": "2026-08-30T19:17:59.650Z"
+  },
+  {
+    "id": "1788117519096",
+    "username": "alice_1788117518833",
+    "email": "alice_1788117518833@pict.edu",
+    "password": "$2b$10$HpjAx2N1OTpbKzN37wbtG.EY5vqP/fjyKHA4tVTkCTcdULWr76Ap2",
+    "createdAt": "2026-08-30T19:18:39.096Z"
+  },
+  {
+    "id": "1788117519284",
+    "username": "bob_1788117519118",
+    "email": "bob_1788117519118@pict.edu",
+    "password": "$2b$10$z2FEo.HUhYVCo8NYgfi2GeP5dTrBPpz802fdaQ87Yju4Bv5lKdPz2",
+    "createdAt": "2026-08-30T19:18:39.284Z"
   }
 ]

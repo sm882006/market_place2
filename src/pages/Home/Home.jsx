@@ -16,18 +16,21 @@ const SERVICES = [
         title: 'Buy & Sell',
         desc: 'List your unused items and find great deals from fellow PICT students – from textbooks to electronics.',
         color: '#6366f1',
+        path: '/orderhome',
     },
     {
         icon: '🏠',
         title: 'Rent Marketplace',
         desc: 'Rent calculators, lab equipment, cycles, or hostel appliances for a short period – save money and space.',
         color: '#10b981',
+        path: '/rent',
     },
     {
         icon: '🔍',
         title: 'Lost & Found',
         desc: 'Post or browse found items like ID cards, wallets, keys, and headphones – recover what’s yours quickly.',
         color: '#f59e0b',
+        path: '/lostfound',
     },
 ]
 
@@ -326,13 +329,17 @@ const Home = () => {
                             <div
                                 key={s.title}
                                 className={`service-card reveal delay-${i + 1}`}
-                                style={{ '--accent': s.color }}
+                                style={{ '--accent': s.color, cursor: 'pointer' }}
+                                onClick={() => navigate(s.path)}
                             >
                                 <div className="service-card__icon-container">
                                     <span className="service-card__icon">{s.icon}</span>
                                 </div>
                                 <h3>{s.title}</h3>
                                 <p>{s.desc}</p>
+                                <div style={{ marginTop: '12px', fontSize: '0.9rem', fontWeight: '700', color: s.color }}>
+                                    Explore {s.title} →
+                                </div>
                                 <div className="service-card__glow" />
                             </div>
                         ))}
@@ -495,10 +502,10 @@ const Home = () => {
                         <span className="footer__logo">🏛️ MarketPICT<span className="logo-dot">.</span></span>
                         <p>The campus ecosystem for buying, renting, and recovering. Built by students, for students.</p>
                         <div className="footer__socials">
-                            <a href="#" aria-label="Instagram">📸</a>
-                            <a href="#" aria-label="Twitter">🐦</a>
-                            <a href="#" aria-label="LinkedIn">💼</a>
-                            <a href="#" aria-label="YouTube">▶️</a>
+                            <a href="https://www.instagram.com/pict.pune/" aria-label="Instagram">📸</a>
+                            <a href="https://x.com/PunePict" aria-label="Twitter">🐦</a>
+                            <a href="https://www.linkedin.com/school/pune-institute-of-computer-technology/" aria-label="LinkedIn">💼</a>
+                            <a href="https://www.youtube.com/@puneinstituteofcomputertec4740" aria-label="YouTube">▶️</a>
                         </div>
                     </div>
                     <div className="footer__links">
@@ -515,7 +522,7 @@ const Home = () => {
                     </div>
                     <div className="footer__contact">
                         <h4>Contact</h4>
-                        <a href="mailto:marketplace@pict.edu">📧 marketplace@pict.edu</a>
+                        <p href="mailto:marketplace@pict.edu">📧 marketplacepict@gmail.com</p>
                         <p className="footer__address">📍 PICT Campus, Pune</p>
                         <p className="footer__hours">🕐 Available 24/7</p>
                     </div>
