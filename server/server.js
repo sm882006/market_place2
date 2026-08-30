@@ -19,6 +19,8 @@ const PRODUCTS_FILE = join(__dirname, 'products.json');
 const RENTS_FILE = join(__dirname, 'rents.json');
 const ORDERS_FILE = join(__dirname, 'orders.json');
 const LOSTFOUND_FILE = join(__dirname, 'lostfound.json');
+const NOTIFICATIONS_FILE = join(__dirname, 'notifications.json');
+const CHATS_FILE = join(__dirname, 'chats.json');
 
 // Middleware
 app.use(cors());
@@ -64,93 +66,11 @@ const saveOrders = (orders) => writeFile(ORDERS_FILE, orders);
 const getLostFound = () => readFile(LOSTFOUND_FILE, []);
 const saveLostFound = (items) => writeFile(LOSTFOUND_FILE, items);
 
-// Initialize initial sample data if empty and users exist
-function initializeDatabase() {
-  const users = getUsers();
-  const products = getProducts();
-  const rents = getRents();
-  const lostfound = getLostFound();
+const getNotifications = () => readFile(NOTIFICATIONS_FILE, []);
+const saveNotifications = (n) => writeFile(NOTIFICATIONS_FILE, n);
 
-  // If products are empty, add a clean initial sample tied to first available user
-  if (products.length === 0 && users.length > 0) {
-    const seller = users[0];
-    const initialProducts = [
-      {
-        id: 'prod_' + Date.now(),
-        name: 'Casio Scientific Calculator FX-991EX',
-        price: 750,
-        condition: 'Like New',
-        handleTime: 'Immediate handover',
-        contact: '9876543210',
-        category: 'Electronics & Gadgets',
-        description: 'Casio fx-991EX ClassWiz scientific calculator in perfect working condition. Ideal for FE/SE engineering students.',
-        photo: 'https://images.unsplash.com/photo-1629739835749-01f11c79f32e?q=80&w=400&auto=format&fit=crop',
-        sellerId: seller.id,
-        sellerUsername: seller.username,
-        status: 'available',
-        buyerId: null,
-        buyerUsername: null,
-        createdAt: new Date().toISOString(),
-        soldAt: null,
-      }
-    ];
-    saveProducts(initialProducts);
-  }
-
-  // If rents are empty, initialize sample
-  if (rents.length === 0 && users.length > 1) {
-    const owner = users[1] || users[0];
-    const initialRents = [
-      {
-        id: 'rent_' + Date.now(),
-        name: 'Engineering Drawing Board & Mini Drafter',
-        category: 'Lab & Drawing Kits',
-        rentPerDay: 30,
-        deposit: 300,
-        availableFrom: new Date().toISOString().split('T')[0],
-        availableTill: '2026-12-31',
-        condition: 'Good',
-        contact: '9988776655',
-        description: 'Clean drawing board with mini drafter, clamp, and storage bag. Ready for semester practicals.',
-        photo: 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?q=80&w=400&auto=format&fit=crop',
-        ownerId: owner.id,
-        ownerUsername: owner.username,
-        status: 'available',
-        renterId: null,
-        renterUsername: null,
-        createdAt: new Date().toISOString(),
-        rentedAt: null,
-      }
-    ];
-    saveRents(initialRents);
-  }
-
-  // If lost & found is empty, initialize sample
-  if (lostfound.length === 0 && users.length > 0) {
-    const reporter = users[0];
-    const initialLF = [
-      {
-        id: 'lf_' + Date.now(),
-        name: 'College ID Card & Lanyard',
-        location: 'Library Reading Hall',
-        date: new Date().toISOString().split('T')[0],
-        category: 'ID Cards & Wallets',
-        description: 'Found blue PICT student ID card on table 14 near the windows.',
-        contact: '9876543210',
-        photo: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?q=80&w=400&auto=format&fit=crop',
-        status: 'unclaimed',
-        reportedById: reporter.id,
-        reportedByUsername: reporter.username,
-        claimedById: null,
-        claimedByUsername: null,
-        createdAt: new Date().toISOString(),
-      }
-    ];
-    saveLostFound(initialLF);
-  }
-}
-
-initializeDatabase();
+const getChats = () => readFile(CHATS_FILE, []);
+const saveChats = (c) => writeFile(CHATS_FILE, c);
 
 // ==================== AUTH HELPERS ====================
 
@@ -178,18 +98,26 @@ function authMiddleware(req, res, next) {
   }
 }
 
-// Optional Auth (populates req.user if token is present)
-function optionalAuthMiddleware(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.split(' ')[1];
-    try {
-      req.user = jwt.verify(token, JWT_SECRET);
-    } catch (err) {
-      // ignore expired / invalid for optional
-    }
-  }
-  next();
+// Helper: create a private notification for a specific user
+function createNotification({ userId, fromUserId, fromUsername, type, productId, rentId, productName, message }) {
+  if (!userId) return null;
+  const notifications = getNotifications();
+  const notif = {
+    id: 'notif_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+    userId,
+    fromUserId,
+    fromUsername,
+    type,
+    productId: productId || null,
+    rentId: rentId || null,
+    productName: productName || '',
+    message,
+    isRead: false,
+    createdAt: new Date().toISOString(),
+  };
+  notifications.push(notif);
+  saveNotifications(notifications);
+  return notif;
 }
 
 // ==================== AUTH ROUTES ====================
@@ -287,7 +215,7 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// GET /api/profile (Protected)
+// GET /api/profile
 app.get('/api/profile', authMiddleware, (req, res) => {
   const users = getUsers();
   const user = users.find(u => u.id === req.user.id);
@@ -308,7 +236,7 @@ app.get('/api/profile', authMiddleware, (req, res) => {
 
 // ==================== PRODUCTS (BUY & SELL) ROUTES ====================
 
-// GET /api/products - Get all products (with optional ?status=available filter)
+// GET /api/products
 app.get('/api/products', (req, res) => {
   try {
     const products = getProducts();
@@ -325,7 +253,6 @@ app.get('/api/products', (req, res) => {
       result = result.filter(p => p.sellerId === sellerId);
     }
 
-    // Sort newest first
     result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     res.json(result);
   } catch (error) {
@@ -334,7 +261,7 @@ app.get('/api/products', (req, res) => {
   }
 });
 
-// POST /api/products - Create a new product listing (Protected)
+// POST /api/products
 app.post('/api/products', authMiddleware, (req, res) => {
   try {
     const { name, price, originalPrice, handleTime, contact, category, condition, description, photo } = req.body;
@@ -363,6 +290,8 @@ app.post('/api/products', authMiddleware, (req, res) => {
       buyerUsername: null,
       createdAt: new Date().toISOString(),
       soldAt: null,
+      pendingBuyerId: null,
+      pendingBuyerUsername: null,
     };
 
     products.push(newProduct);
@@ -378,17 +307,16 @@ app.post('/api/products', authMiddleware, (req, res) => {
   }
 });
 
-// POST /api/products/:id/buy - Buy a product (Protected)
+// ─── POST /api/products/:id/buy ─── Direct Buy Action
 app.post('/api/products/:id/buy', authMiddleware, (req, res) => {
   try {
     const { id } = req.params;
+    const { contact = '' } = req.body;
     const buyerId = req.user.id;
     const buyerUsername = req.user.username;
-    const { contact } = req.body;
 
     const products = getProducts();
     const productIndex = products.findIndex(p => p.id === id);
-
     if (productIndex === -1) {
       return res.status(404).json({ message: 'Product not found.' });
     }
@@ -396,22 +324,24 @@ app.post('/api/products/:id/buy', authMiddleware, (req, res) => {
     const product = products[productIndex];
 
     if (product.sellerId === buyerId) {
-      return res.status(400).json({ message: 'You cannot buy your own listed product.' });
+      return res.status(400).json({ message: 'You cannot buy your own listed item.' });
     }
 
     if (product.status === 'sold') {
       return res.status(400).json({ message: 'This item has already been sold.' });
     }
 
-    // Update product status
+    // Mark as sold
     product.status = 'sold';
     product.buyerId = buyerId;
     product.buyerUsername = buyerUsername;
     product.soldAt = new Date().toISOString();
+    product.pendingBuyerId = null;
+    product.pendingBuyerUsername = null;
     products[productIndex] = product;
     saveProducts(products);
 
-    // Create an order record
+    // Save order
     const orders = getOrders();
     const newOrder = {
       id: 'ord_' + Date.now().toString(),
@@ -423,29 +353,250 @@ app.post('/api/products/:id/buy', authMiddleware, (req, res) => {
       price: product.price,
       buyerId,
       buyerUsername,
-      buyerContact: contact || '',
+      buyerContact: contact,
       sellerId: product.sellerId,
-      sellerUsername: product.sellerUsername,
+      sellerUsername: product.sellerUsername || product.seller || 'Student',
       sellerContact: product.contact,
       status: 'completed',
       createdAt: new Date().toISOString(),
     };
-
     orders.push(newOrder);
     saveOrders(orders);
 
+    // Notify seller
+    createNotification({
+      userId: product.sellerId,
+      fromUserId: buyerId,
+      fromUsername: buyerUsername,
+      type: 'product_sold',
+      productId: id,
+      productName: product.name,
+      message: `🎉 @${buyerUsername} purchased your "${product.name}" for ₹${product.price}! Buyer contact: ${contact || 'N/A'}.`,
+    });
+
     res.json({
       message: 'Product purchased successfully!',
-      order: newOrder,
       product,
+      order: newOrder,
     });
   } catch (error) {
     console.error('Buy product error:', error);
-    res.status(500).json({ message: 'Failed to complete purchase.' });
+    res.status(500).json({ message: 'Failed to purchase product.' });
   }
 });
 
-// DELETE /api/products/:id - Delete a product listing (Protected, owner only)
+// ─── POST /api/products/:id/buy-request ─── Send Buy Request & Open 1-on-1 Private Chat
+app.post('/api/products/:id/buy-request', authMiddleware, (req, res) => {
+  try {
+    const { id } = req.params;
+    const { message: buyerMsg } = req.body;
+    const buyerId = req.user.id;
+    const buyerUsername = req.user.username;
+
+    const products = getProducts();
+    const productIndex = products.findIndex(p => p.id === id);
+    if (productIndex === -1) {
+      return res.status(404).json({ message: 'Product not found.' });
+    }
+
+    const product = products[productIndex];
+
+    if (product.sellerId === buyerId) {
+      return res.status(400).json({ message: 'You cannot request to buy your own listed item.' });
+    }
+
+    if (product.status === 'sold') {
+      return res.status(400).json({ message: 'This item has already been sold.' });
+    }
+
+    if (product.status === 'pending') {
+      return res.status(400).json({ message: 'Another buyer has already sent a request for this item. Please check back later.' });
+    }
+
+    // Set product to pending state
+    product.status = 'pending';
+    product.pendingBuyerId = buyerId;
+    product.pendingBuyerUsername = buyerUsername;
+    products[productIndex] = product;
+    saveProducts(products);
+
+    // Create private chat
+    const chats = getChats();
+    let chat = chats.find(c => c.productId === id && c.buyerId === buyerId && c.sellerId === product.sellerId);
+    if (!chat) {
+      chat = {
+        id: 'chat_' + Date.now().toString(),
+        productId: id,
+        rentId: null,
+        productName: product.name,
+        productPhoto: product.photo,
+        buyerId,
+        buyerUsername,
+        sellerId: product.sellerId,
+        sellerUsername: product.sellerUsername || product.seller || 'Seller',
+        messages: [],
+        createdAt: new Date().toISOString(),
+        lastMessageAt: new Date().toISOString(),
+      };
+      chats.push(chat);
+      saveChats(chats);
+    }
+
+    const autoMsg = buyerMsg || `Hi! I want to buy your "${product.name}" for ₹${product.price}. Is it available to meet on campus?`;
+    const chatIndex = chats.findIndex(c => c.id === chat.id);
+    chats[chatIndex].messages.push({
+      id: 'msg_' + Date.now(),
+      senderId: buyerId,
+      senderUsername: buyerUsername,
+      text: autoMsg,
+      timestamp: new Date().toISOString(),
+    });
+    chats[chatIndex].lastMessageAt = new Date().toISOString();
+    saveChats(chats);
+
+    // Notify seller privately
+    createNotification({
+      userId: product.sellerId,
+      fromUserId: buyerId,
+      fromUsername: buyerUsername,
+      type: 'buy_request',
+      productId: id,
+      productName: product.name,
+      message: `@${buyerUsername} requested to buy your "${product.name}" for ₹${product.price}. Chat to coordinate and approve the sale.`,
+    });
+
+    res.json({
+      message: 'Purchase request sent! The seller has been notified.',
+      chatId: chat.id,
+      product,
+    });
+  } catch (error) {
+    console.error('Buy request error:', error);
+    res.status(500).json({ message: 'Failed to send purchase request.' });
+  }
+});
+
+// ─── POST /api/products/:id/approve-sale ─── Seller Approves Sale
+app.post('/api/products/:id/approve-sale', authMiddleware, (req, res) => {
+  try {
+    const { id } = req.params;
+    const sellerId = req.user.id;
+
+    const products = getProducts();
+    const productIndex = products.findIndex(p => p.id === id);
+    if (productIndex === -1) {
+      return res.status(404).json({ message: 'Product not found.' });
+    }
+
+    const product = products[productIndex];
+
+    if (product.sellerId !== sellerId) {
+      return res.status(403).json({ message: 'Permission denied. Only the seller can approve the sale.' });
+    }
+
+    if (!product.pendingBuyerId) {
+      return res.status(400).json({ message: 'No pending buyer request found for this product.' });
+    }
+
+    const approvedBuyerId = product.pendingBuyerId;
+    const approvedBuyerUsername = product.pendingBuyerUsername;
+
+    product.status = 'sold';
+    product.buyerId = approvedBuyerId;
+    product.buyerUsername = approvedBuyerUsername;
+    product.soldAt = new Date().toISOString();
+    product.pendingBuyerId = null;
+    product.pendingBuyerUsername = null;
+    products[productIndex] = product;
+    saveProducts(products);
+
+    const orders = getOrders();
+    const newOrder = {
+      id: 'ord_' + Date.now().toString(),
+      type: 'buy',
+      itemId: product.id,
+      itemName: product.name,
+      itemPhoto: product.photo,
+      category: product.category,
+      price: product.price,
+      buyerId: approvedBuyerId,
+      buyerUsername: approvedBuyerUsername,
+      buyerContact: '',
+      sellerId: product.sellerId,
+      sellerUsername: product.sellerUsername || 'Seller',
+      sellerContact: product.contact,
+      status: 'completed',
+      createdAt: new Date().toISOString(),
+    };
+    orders.push(newOrder);
+    saveOrders(orders);
+
+    createNotification({
+      userId: approvedBuyerId,
+      fromUserId: product.sellerId,
+      fromUsername: product.sellerUsername,
+      type: 'sale_approved',
+      productId: id,
+      productName: product.name,
+      message: `🎉 @${product.sellerUsername} approved your purchase! "${product.name}" is now marked as sold to you.`,
+    });
+
+    res.json({
+      message: 'Sale approved! The product is now marked as Sold.',
+      product,
+      order: newOrder,
+    });
+  } catch (error) {
+    console.error('Approve sale error:', error);
+    res.status(500).json({ message: 'Failed to approve sale.' });
+  }
+});
+
+// ─── POST /api/products/:id/reject-sale ─── Seller Declines Sale
+app.post('/api/products/:id/reject-sale', authMiddleware, (req, res) => {
+  try {
+    const { id } = req.params;
+    const sellerId = req.user.id;
+
+    const products = getProducts();
+    const productIndex = products.findIndex(p => p.id === id);
+    if (productIndex === -1) {
+      return res.status(404).json({ message: 'Product not found.' });
+    }
+
+    const product = products[productIndex];
+
+    if (product.sellerId !== sellerId) {
+      return res.status(403).json({ message: 'Permission denied. Only the seller can decline this request.' });
+    }
+
+    const rejectedBuyerId = product.pendingBuyerId;
+
+    product.status = 'available';
+    product.pendingBuyerId = null;
+    product.pendingBuyerUsername = null;
+    products[productIndex] = product;
+    saveProducts(products);
+
+    if (rejectedBuyerId) {
+      createNotification({
+        userId: rejectedBuyerId,
+        fromUserId: product.sellerId,
+        fromUsername: product.sellerUsername,
+        type: 'sale_rejected',
+        productId: id,
+        productName: product.name,
+        message: `Sorry, @${product.sellerUsername} declined your request for "${product.name}". The item is available for other buyers.`,
+      });
+    }
+
+    res.json({ message: 'Request declined. Product is available again.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to decline request.' });
+  }
+});
+
+// DELETE /api/products/:id
 app.delete('/api/products/:id', authMiddleware, (req, res) => {
   try {
     const { id } = req.params;
@@ -465,14 +616,13 @@ app.delete('/api/products/:id', authMiddleware, (req, res) => {
 
     res.json({ message: 'Product listing removed successfully.' });
   } catch (error) {
-    console.error('Delete product error:', error);
     res.status(500).json({ message: 'Failed to delete product.' });
   }
 });
 
 // ==================== RENT ROUTES ====================
 
-// GET /api/rents - Get all rental items
+// GET /api/rents
 app.get('/api/rents', (req, res) => {
   try {
     const rents = getRents();
@@ -492,12 +642,11 @@ app.get('/api/rents', (req, res) => {
     result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     res.json(result);
   } catch (error) {
-    console.error('Fetch rents error:', error);
     res.status(500).json({ message: 'Failed to retrieve rental items.' });
   }
 });
 
-// POST /api/rents - List a product for rent (Protected)
+// POST /api/rents
 app.post('/api/rents', authMiddleware, (req, res) => {
   try {
     const { name, category, rentPerDay, deposit, availableFrom, availableTill, description, contact, photo, condition } = req.body;
@@ -526,6 +675,8 @@ app.post('/api/rents', authMiddleware, (req, res) => {
       renterUsername: null,
       createdAt: new Date().toISOString(),
       rentedAt: null,
+      pendingRenterId: null,
+      pendingRenterUsername: null,
     };
 
     rents.push(newRent);
@@ -536,45 +687,45 @@ app.post('/api/rents', authMiddleware, (req, res) => {
       rentItem: newRent,
     });
   } catch (error) {
-    console.error('Add rent error:', error);
     res.status(500).json({ message: 'Failed to list rent item.' });
   }
 });
 
-// POST /api/rents/:id/rent - Rent an item (Protected)
+// ─── POST /api/rents/:id/rent ─── Direct Rent Action
 app.post('/api/rents/:id/rent', authMiddleware, (req, res) => {
   try {
     const { id } = req.params;
+    const { days = 1, contact = '' } = req.body;
     const renterId = req.user.id;
     const renterUsername = req.user.username;
-    const { days = 1, contact } = req.body;
 
     const rents = getRents();
     const rentIndex = rents.findIndex(r => r.id === id);
-
     if (rentIndex === -1) {
       return res.status(404).json({ message: 'Rent item not found.' });
     }
 
     const item = rents[rentIndex];
-
     if (item.ownerId === renterId) {
       return res.status(400).json({ message: 'You cannot rent your own item.' });
     }
-
     if (item.status === 'rented') {
       return res.status(400).json({ message: 'This item is currently rented out.' });
     }
+
+    const rentDays = parseInt(days, 10) || 1;
+    const totalAmount = (item.rentPerDay * rentDays) + (item.deposit || 0);
 
     item.status = 'rented';
     item.renterId = renterId;
     item.renterUsername = renterUsername;
     item.rentedAt = new Date().toISOString();
+    item.pendingRenterId = null;
+    item.pendingRenterUsername = null;
     rents[rentIndex] = item;
     saveRents(rents);
 
-    // Record order
-    const totalAmount = (item.rentPerDay * (parseInt(days, 10) || 1)) + (item.deposit || 0);
+    // Save order
     const orders = getOrders();
     const newOrder = {
       id: 'ord_' + Date.now().toString(),
@@ -585,33 +736,241 @@ app.post('/api/rents/:id/rent', authMiddleware, (req, res) => {
       category: item.category,
       price: item.rentPerDay,
       deposit: item.deposit,
-      rentDays: parseInt(days, 10) || 1,
+      rentDays,
       totalAmount,
       buyerId: renterId,
       buyerUsername: renterUsername,
-      buyerContact: contact || '',
+      buyerContact: contact,
+      sellerId: item.ownerId,
+      sellerUsername: item.ownerUsername || 'Owner',
+      sellerContact: item.contact,
+      status: 'active',
+      createdAt: new Date().toISOString(),
+    };
+    orders.push(newOrder);
+    saveOrders(orders);
+
+    createNotification({
+      userId: item.ownerId,
+      fromUserId: renterId,
+      fromUsername: renterUsername,
+      type: 'rent_confirmed',
+      rentId: id,
+      productName: item.name,
+      message: `🎉 @${renterUsername} rented your "${item.name}" for ${rentDays} day(s)! Contact: ${contact || 'N/A'}.`,
+    });
+
+    res.json({
+      message: 'Item rented successfully!',
+      item,
+      order: newOrder,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to rent item.' });
+  }
+});
+
+// ─── POST /api/rents/:id/rent-request ─── Send Rent Request
+app.post('/api/rents/:id/rent-request', authMiddleware, (req, res) => {
+  try {
+    const { id } = req.params;
+    const { days = 1, message: renterMsg } = req.body;
+    const renterId = req.user.id;
+    const renterUsername = req.user.username;
+
+    const rents = getRents();
+    const rentIndex = rents.findIndex(r => r.id === id);
+    if (rentIndex === -1) {
+      return res.status(404).json({ message: 'Rent item not found.' });
+    }
+
+    const item = rents[rentIndex];
+    if (item.ownerId === renterId) {
+      return res.status(400).json({ message: 'You cannot rent your own item.' });
+    }
+    if (item.status === 'rented') {
+      return res.status(400).json({ message: 'This item is currently rented out.' });
+    }
+    if (item.status === 'pending') {
+      return res.status(400).json({ message: 'Another student has already sent a request for this rental.' });
+    }
+
+    item.status = 'pending';
+    item.pendingRenterId = renterId;
+    item.pendingRenterUsername = renterUsername;
+    item.pendingDays = parseInt(days, 10) || 1;
+    rents[rentIndex] = item;
+    saveRents(rents);
+
+    const chats = getChats();
+    let chat = chats.find(c => c.rentId === id && c.buyerId === renterId && c.sellerId === item.ownerId);
+    if (!chat) {
+      chat = {
+        id: 'chat_' + Date.now().toString(),
+        rentId: id,
+        productId: null,
+        productName: item.name,
+        productPhoto: item.photo,
+        buyerId: renterId,
+        buyerUsername: renterUsername,
+        sellerId: item.ownerId,
+        sellerUsername: item.ownerUsername || 'Owner',
+        messages: [],
+        createdAt: new Date().toISOString(),
+        lastMessageAt: new Date().toISOString(),
+      };
+      chats.push(chat);
+      saveChats(chats);
+    }
+
+    const autoMsg = renterMsg || `Hi! I would like to rent your "${item.name}" for ${days} day(s). When and where can we meet?`;
+    const chatIndex = chats.findIndex(c => c.id === chat.id);
+    chats[chatIndex].messages.push({
+      id: 'msg_' + Date.now(),
+      senderId: renterId,
+      senderUsername: renterUsername,
+      text: autoMsg,
+      timestamp: new Date().toISOString(),
+    });
+    chats[chatIndex].lastMessageAt = new Date().toISOString();
+    saveChats(chats);
+
+    createNotification({
+      userId: item.ownerId,
+      fromUserId: renterId,
+      fromUsername: renterUsername,
+      type: 'rent_request',
+      rentId: id,
+      productName: item.name,
+      message: `@${renterUsername} requested to rent your "${item.name}" for ${days} day(s). Chat to coordinate and approve.`,
+    });
+
+    res.json({ message: 'Rent request sent! The owner will be notified.', chatId: chat.id, item });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to send rent request.' });
+  }
+});
+
+// ─── POST /api/rents/:id/approve-rent ───
+app.post('/api/rents/:id/approve-rent', authMiddleware, (req, res) => {
+  try {
+    const { id } = req.params;
+    const ownerId = req.user.id;
+
+    const rents = getRents();
+    const rentIndex = rents.findIndex(r => r.id === id);
+    if (rentIndex === -1) {
+      return res.status(404).json({ message: 'Rent item not found.' });
+    }
+
+    const item = rents[rentIndex];
+    if (item.ownerId !== ownerId) {
+      return res.status(403).json({ message: 'Permission denied. Only the owner can approve this rent.' });
+    }
+    if (!item.pendingRenterId) {
+      return res.status(400).json({ message: 'No pending rent request found.' });
+    }
+
+    const days = item.pendingDays || 1;
+    const totalAmount = (item.rentPerDay * days) + (item.deposit || 0);
+
+    const approvedRenterId = item.pendingRenterId;
+    const approvedRenterUsername = item.pendingRenterUsername;
+
+    item.status = 'rented';
+    item.renterId = approvedRenterId;
+    item.renterUsername = approvedRenterUsername;
+    item.rentedAt = new Date().toISOString();
+    item.pendingRenterId = null;
+    item.pendingRenterUsername = null;
+    item.pendingDays = null;
+    rents[rentIndex] = item;
+    saveRents(rents);
+
+    const orders = getOrders();
+    const newOrder = {
+      id: 'ord_' + Date.now().toString(),
+      type: 'rent',
+      itemId: item.id,
+      itemName: item.name,
+      itemPhoto: item.photo,
+      category: item.category,
+      price: item.rentPerDay,
+      deposit: item.deposit,
+      rentDays: days,
+      totalAmount,
+      buyerId: approvedRenterId,
+      buyerUsername: approvedRenterUsername,
+      buyerContact: '',
       sellerId: item.ownerId,
       sellerUsername: item.ownerUsername,
       sellerContact: item.contact,
       status: 'active',
       createdAt: new Date().toISOString(),
     };
-
     orders.push(newOrder);
     saveOrders(orders);
 
-    res.json({
-      message: 'Item rented successfully!',
-      order: newOrder,
-      rentItem: item,
+    createNotification({
+      userId: approvedRenterId,
+      fromUserId: item.ownerId,
+      fromUsername: item.ownerUsername,
+      type: 'rent_approved',
+      rentId: id,
+      productName: item.name,
+      message: `🎉 @${item.ownerUsername} approved your rent request for "${item.name}"!`,
     });
+
+    res.json({ message: 'Rent approved! The item is marked as Rented.', item, order: newOrder });
   } catch (error) {
-    console.error('Rent item error:', error);
-    res.status(500).json({ message: 'Failed to rent item.' });
+    res.status(500).json({ message: 'Failed to approve rent.' });
   }
 });
 
-// DELETE /api/rents/:id - Delete a rent listing (Protected, owner only)
+// ─── POST /api/rents/:id/reject-rent ───
+app.post('/api/rents/:id/reject-rent', authMiddleware, (req, res) => {
+  try {
+    const { id } = req.params;
+    const ownerId = req.user.id;
+
+    const rents = getRents();
+    const rentIndex = rents.findIndex(r => r.id === id);
+    if (rentIndex === -1) {
+      return res.status(404).json({ message: 'Rent item not found.' });
+    }
+
+    const item = rents[rentIndex];
+    if (item.ownerId !== ownerId) {
+      return res.status(403).json({ message: 'Permission denied.' });
+    }
+
+    const rejectedRenterId = item.pendingRenterId;
+    item.status = 'available';
+    item.pendingRenterId = null;
+    item.pendingRenterUsername = null;
+    item.pendingDays = null;
+    rents[rentIndex] = item;
+    saveRents(rents);
+
+    if (rejectedRenterId) {
+      createNotification({
+        userId: rejectedRenterId,
+        fromUserId: item.ownerId,
+        fromUsername: item.ownerUsername,
+        type: 'rent_rejected',
+        rentId: id,
+        productName: item.name,
+        message: `Sorry, @${item.ownerUsername} declined your rent request for "${item.name}". The item is available again.`,
+      });
+    }
+
+    res.json({ message: 'Request declined. Rental is back to available.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to decline rent request.' });
+  }
+});
+
+// DELETE /api/rents/:id
 app.delete('/api/rents/:id', authMiddleware, (req, res) => {
   try {
     const { id } = req.params;
@@ -631,14 +990,12 @@ app.delete('/api/rents/:id', authMiddleware, (req, res) => {
 
     res.json({ message: 'Rent listing removed successfully.' });
   } catch (error) {
-    console.error('Delete rent error:', error);
     res.status(500).json({ message: 'Failed to delete rent listing.' });
   }
 });
 
 // ==================== LOST & FOUND ROUTES ====================
 
-// GET /api/lostfound - Get all lost & found items
 app.get('/api/lostfound', (req, res) => {
   try {
     const items = getLostFound();
@@ -655,12 +1012,10 @@ app.get('/api/lostfound', (req, res) => {
     result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     res.json(result);
   } catch (error) {
-    console.error('Fetch lost & found error:', error);
     res.status(500).json({ message: 'Failed to retrieve lost & found items.' });
   }
 });
 
-// POST /api/lostfound - Report found/lost item (Protected)
 app.post('/api/lostfound', authMiddleware, (req, res) => {
   try {
     const { name, location, date, category, description, contact, photo } = req.body;
@@ -695,12 +1050,10 @@ app.post('/api/lostfound', authMiddleware, (req, res) => {
       item: newItem,
     });
   } catch (error) {
-    console.error('Add lost & found error:', error);
     res.status(500).json({ message: 'Failed to report item.' });
   }
 });
 
-// PATCH /api/lostfound/:id/claim - Claim item (Protected)
 app.patch('/api/lostfound/:id/claim', authMiddleware, (req, res) => {
   try {
     const { id } = req.params;
@@ -723,12 +1076,10 @@ app.patch('/api/lostfound/:id/claim', authMiddleware, (req, res) => {
       item,
     });
   } catch (error) {
-    console.error('Claim lost & found error:', error);
     res.status(500).json({ message: 'Failed to claim item.' });
   }
 });
 
-// DELETE /api/lostfound/:id - Delete lost & found listing (Protected, reporter only)
 app.delete('/api/lostfound/:id', authMiddleware, (req, res) => {
   try {
     const { id } = req.params;
@@ -748,14 +1099,12 @@ app.delete('/api/lostfound/:id', authMiddleware, (req, res) => {
 
     res.json({ message: 'Lost & found report deleted.' });
   } catch (error) {
-    console.error('Delete lost & found error:', error);
     res.status(500).json({ message: 'Failed to delete report.' });
   }
 });
 
 // ==================== ORDERS ROUTES ====================
 
-// GET /api/orders - Get user's orders (bought / sold / rented) (Protected)
 app.get('/api/orders', authMiddleware, (req, res) => {
   try {
     const userId = req.user.id;
@@ -768,14 +1117,153 @@ app.get('/api/orders', authMiddleware, (req, res) => {
     userOrders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     res.json(userOrders);
   } catch (error) {
-    console.error('Fetch orders error:', error);
     res.status(500).json({ message: 'Failed to retrieve orders.' });
+  }
+});
+
+// ==================== NOTIFICATIONS ROUTES (Strictly Private to Logged-in User) ====================
+
+// GET /api/notifications
+app.get('/api/notifications', authMiddleware, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const notifications = getNotifications();
+    const userNotifs = notifications
+      .filter(n => n.userId === userId)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    res.json(userNotifs);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to retrieve notifications.' });
+  }
+});
+
+// PATCH /api/notifications/:id/read
+app.patch('/api/notifications/:id/read', authMiddleware, (req, res) => {
+  try {
+    const notifications = getNotifications();
+    const idx = notifications.findIndex(n => n.id === req.params.id && n.userId === req.user.id);
+    if (idx === -1) return res.status(404).json({ message: 'Notification not found.' });
+    notifications[idx].isRead = true;
+    saveNotifications(notifications);
+    res.json({ message: 'Marked as read.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update notification.' });
+  }
+});
+
+// PATCH /api/notifications/read-all
+app.patch('/api/notifications/read-all', authMiddleware, (req, res) => {
+  try {
+    const notifications = getNotifications();
+    notifications.forEach(n => { if (n.userId === req.user.id) n.isRead = true; });
+    saveNotifications(notifications);
+    res.json({ message: 'All marked as read.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update notifications.' });
+  }
+});
+
+// DELETE /api/notifications/:id
+app.delete('/api/notifications/:id', authMiddleware, (req, res) => {
+  try {
+    let notifications = getNotifications();
+    notifications = notifications.filter(n => !(n.id === req.params.id && n.userId === req.user.id));
+    saveNotifications(notifications);
+    res.json({ message: 'Notification dismissed.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to dismiss notification.' });
+  }
+});
+
+// ==================== CHAT ROUTES (Strictly Private 1-on-1) ====================
+
+// GET /api/chats
+app.get('/api/chats', authMiddleware, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const chats = getChats();
+    const userChats = chats
+      .filter(c => c.buyerId === userId || c.sellerId === userId)
+      .sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
+    res.json(userChats);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to retrieve chats.' });
+  }
+});
+
+// GET /api/chats/:chatId
+app.get('/api/chats/:chatId', authMiddleware, (req, res) => {
+  try {
+    const { chatId } = req.params;
+    const userId = req.user.id;
+    const chats = getChats();
+    const chat = chats.find(c => c.id === chatId);
+    if (!chat) return res.status(404).json({ message: 'Chat not found.' });
+
+    if (chat.buyerId !== userId && chat.sellerId !== userId) {
+      return res.status(403).json({ message: 'Access denied. This is a private conversation.' });
+    }
+
+    res.json(chat);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to retrieve chat.' });
+  }
+});
+
+// POST /api/chats/:chatId/message
+app.post('/api/chats/:chatId/message', authMiddleware, (req, res) => {
+  try {
+    const { chatId } = req.params;
+    const { text } = req.body;
+    const userId = req.user.id;
+    const username = req.user.username;
+
+    if (!text || !text.trim()) {
+      return res.status(400).json({ message: 'Message cannot be empty.' });
+    }
+
+    const chats = getChats();
+    const chatIndex = chats.findIndex(c => c.id === chatId);
+    if (chatIndex === -1) return res.status(404).json({ message: 'Chat not found.' });
+
+    const chat = chats[chatIndex];
+    if (chat.buyerId !== userId && chat.sellerId !== userId) {
+      return res.status(403).json({ message: 'Access denied.' });
+    }
+
+    const newMsg = {
+      id: 'msg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      senderId: userId,
+      senderUsername: username,
+      text: text.trim(),
+      timestamp: new Date().toISOString(),
+    };
+
+    chats[chatIndex].messages.push(newMsg);
+    chats[chatIndex].lastMessageAt = new Date().toISOString();
+    saveChats(chats);
+
+    const recipientId = chat.buyerId === userId ? chat.sellerId : chat.buyerId;
+    createNotification({
+      userId: recipientId,
+      fromUserId: userId,
+      fromUsername: username,
+      type: 'chat_message',
+      productId: chat.productId,
+      rentId: chat.rentId,
+      productName: chat.productName,
+      message: `@${username}: ${text.slice(0, 80)}${text.length > 80 ? '…' : ''}`,
+    });
+
+    res.json({ message: 'Message sent!', msg: newMsg });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to send message.' });
   }
 });
 
 // ==================== UNIFIED USER ACTIVITY ROUTE ====================
 
-// GET /api/user/activity - Aggregates activity specifically for the authenticated user (Protected)
+// GET /api/user/activity
 app.get('/api/user/activity', authMiddleware, (req, res) => {
   try {
     const userId = req.user.id;
@@ -788,10 +1276,14 @@ app.get('/api/user/activity', authMiddleware, (req, res) => {
 
     const activities = [];
 
-    // 1. Items listed to SELL by this user
+    // 1. Items listed to SELL by THIS user
     products
-      .filter(p => p.sellerId === userId || (!p.sellerId && p.seller === username))
+      .filter(p => p.sellerId === userId || (!p.sellerId && (p.seller === username || p.sellerUsername === username)))
       .forEach(p => {
+        let statusLabel = 'Listed for Sale';
+        if (p.status === 'sold') statusLabel = `🏷️ Sold to @${p.buyerUsername || 'buyer'}`;
+        else if (p.status === 'pending') statusLabel = `⏳ Pending Request from @${p.pendingBuyerUsername}`;
+
         activities.push({
           id: 'act_prod_' + p.id,
           rawId: p.id,
@@ -799,20 +1291,30 @@ app.get('/api/user/activity', authMiddleware, (req, res) => {
           title: p.name,
           category: p.category,
           price: p.price,
-          status: p.status, // 'available' | 'sold'
-          statusLabel: p.status === 'sold' ? `Sold to @${p.buyerUsername || 'buyer'}` : 'Listed for Sale',
+          status: p.status,
+          statusLabel,
           photo: p.photo,
           date: p.createdAt,
           canDelete: p.status === 'available',
+          canApprove: p.status === 'pending',
+          pendingBuyerId: p.pendingBuyerId,
+          pendingBuyerUsername: p.pendingBuyerUsername,
           details: p.description,
           contact: p.contact,
+          deleteEndpoint: '/api/products/' + p.id,
+          approveEndpoint: '/api/products/' + p.id + '/approve-sale',
+          rejectEndpoint: '/api/products/' + p.id + '/reject-sale',
         });
       });
 
-    // 2. Items listed for RENT by this user
+    // 2. Items listed for RENT by THIS user
     rents
       .filter(r => r.ownerId === userId || (!r.ownerId && r.ownerUsername === username))
       .forEach(r => {
+        let statusLabel = 'Listed for Rent';
+        if (r.status === 'rented') statusLabel = `🔑 Rented to @${r.renterUsername || 'student'}`;
+        else if (r.status === 'pending') statusLabel = `⏳ Pending Request from @${r.pendingRenterUsername}`;
+
         activities.push({
           id: 'act_rent_' + r.id,
           rawId: r.id,
@@ -821,17 +1323,23 @@ app.get('/api/user/activity', authMiddleware, (req, res) => {
           category: r.category,
           price: r.rentPerDay,
           priceUnit: '/day',
-          status: r.status, // 'available' | 'rented'
-          statusLabel: r.status === 'rented' ? `Rented to @${r.renterUsername || 'student'}` : 'Listed for Rent',
+          status: r.status,
+          statusLabel,
           photo: r.photo,
           date: r.createdAt,
           canDelete: r.status === 'available',
+          canApprove: r.status === 'pending',
+          pendingRenterId: r.pendingRenterId,
+          pendingRenterUsername: r.pendingRenterUsername,
           details: r.description,
           contact: r.contact,
+          deleteEndpoint: '/api/rents/' + r.id,
+          approveEndpoint: '/api/rents/' + r.id + '/approve-rent',
+          rejectEndpoint: '/api/rents/' + r.id + '/reject-rent',
         });
       });
 
-    // 3. Items BOUGHT or RENTED by this user (from orders)
+    // 3. Items BOUGHT or RENTED by THIS user (orders)
     orders
       .filter(o => o.buyerId === userId)
       .forEach(o => {
@@ -843,18 +1351,64 @@ app.get('/api/user/activity', authMiddleware, (req, res) => {
           category: o.category,
           price: o.type === 'rent' ? o.totalAmount : o.price,
           status: 'completed',
-          statusLabel: o.type === 'rent' ? `Rented from @${o.sellerUsername}` : `Bought from @${o.sellerUsername}`,
+          statusLabel: o.type === 'rent' ? `🤝 Rented from @${o.sellerUsername}` : `🛒 Bought from @${o.sellerUsername}`,
           photo: o.itemPhoto,
           date: o.createdAt,
           canDelete: false,
+          canApprove: false,
           details: `Order #${o.id.slice(-6)} • Seller: @${o.sellerUsername} (${o.sellerContact || 'N/A'})`,
           contact: o.sellerContact,
         });
       });
 
-    // 4. Lost & Found items reported by this user
+    // 4. Pending buy requests sent by THIS user
+    products
+      .filter(p => p.pendingBuyerId === userId)
+      .forEach(p => {
+        activities.push({
+          id: 'act_pending_buy_' + p.id,
+          rawId: p.id,
+          type: 'pending_buy',
+          title: p.name,
+          category: p.category,
+          price: p.price,
+          status: 'pending',
+          statusLabel: `⏳ Awaiting approval from @${p.sellerUsername}`,
+          photo: p.photo,
+          date: new Date().toISOString(),
+          canDelete: false,
+          canApprove: false,
+          details: `Your purchase request is pending seller review. Seller: @${p.sellerUsername}`,
+          contact: p.contact,
+        });
+      });
+
+    // 5. Pending rent requests sent by THIS user
+    rents
+      .filter(r => r.pendingRenterId === userId)
+      .forEach(r => {
+        activities.push({
+          id: 'act_pending_rent_' + r.id,
+          rawId: r.id,
+          type: 'pending_rent',
+          title: r.name,
+          category: r.category,
+          price: r.rentPerDay,
+          priceUnit: '/day',
+          status: 'pending',
+          statusLabel: `⏳ Awaiting approval from @${r.ownerUsername}`,
+          photo: r.photo,
+          date: new Date().toISOString(),
+          canDelete: false,
+          canApprove: false,
+          details: `Your rent request is pending owner review. Owner: @${r.ownerUsername}`,
+          contact: r.contact,
+        });
+      });
+
+    // 6. Lost & Found items reported by THIS user
     lostfound
-      .filter(lf => lf.reportedById === userId || (!lf.reportedById && lf.reportedByUsername === username))
+      .filter(lf => lf.reportedById === userId || (!lf.reportedById && (lf.reportedBy === username || lf.reportedByUsername === username)))
       .forEach(lf => {
         activities.push({
           id: 'act_lf_' + lf.id,
@@ -868,8 +1422,10 @@ app.get('/api/user/activity', authMiddleware, (req, res) => {
           photo: lf.photo,
           date: lf.createdAt,
           canDelete: true,
+          canApprove: false,
           details: `Location: ${lf.location} • Date: ${lf.date}`,
           contact: lf.contact,
+          deleteEndpoint: '/api/lostfound/' + lf.id,
         });
       });
 
@@ -890,4 +1446,3 @@ app.get('/api/user/activity', authMiddleware, (req, res) => {
 app.listen(PORT, () => {
   console.log(`✅ Backend server running on http://localhost:${PORT}`);
 });
-

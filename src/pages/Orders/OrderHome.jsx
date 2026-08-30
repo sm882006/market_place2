@@ -227,8 +227,8 @@ const OrderHome = () => {
 
     // Sorting and Filtering logic
     const filteredProducts = products.filter(prod => {
-        const matchesSearch = prod.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                              (prod.description && prod.description.toLowerCase().includes(searchQuery.toLowerCase()));
+        const matchesSearch = prod.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (prod.description && prod.description.toLowerCase().includes(searchQuery.toLowerCase()));
         const matchesCategory = categoryFilter === 'All' || prod.category === categoryFilter;
         return matchesSearch && matchesCategory;
     });
@@ -245,12 +245,12 @@ const OrderHome = () => {
     });
 
     const categoriesList = [
-        'All', 
-        'Books', 
-        'Electronics & Gadgets', 
-        'Lab & Drawing Kits', 
-        'Bicycles & Vehicles', 
-        'Hostel & Daily Utilities', 
+        'All',
+        'Books',
+        'Electronics & Gadgets',
+        'Lab & Drawing Kits',
+        'Bicycles & Vehicles',
+        'Hostel & Daily Utilities',
         'Others'
     ];
 
@@ -265,16 +265,16 @@ const OrderHome = () => {
             <div className="left-part">
                 <div className="orderheading">Campus Marketplace</div>
                 <div className="left-divider"></div>
-                
+
                 {/* View Switcher */}
                 <div className="view-switcher-box">
-                    <button 
+                    <button
                         className={`view-toggle-btn ${activeView === 'marketplace' ? 'active' : ''}`}
                         onClick={() => setActiveView('marketplace')}
                     >
                         🎒 Available Items ({products.length})
                     </button>
-                    <button 
+                    <button
                         className={`view-toggle-btn ${activeView === 'orders' ? 'active' : ''}`}
                         onClick={() => {
                             if (!token) {
@@ -294,8 +294,8 @@ const OrderHome = () => {
                         {/* Sort Option */}
                         <div className="filter-section">
                             <label className="section-label">Sort Items</label>
-                            <select 
-                                value={sortOption} 
+                            <select
+                                value={sortOption}
                                 onChange={(e) => setSortOption(e.target.value)}
                                 className="sort-select"
                             >
@@ -351,24 +351,24 @@ const OrderHome = () => {
                 <div className="upperorder">
                     <div className="searchorderitem">
                         <span className="search-icon">🔍</span>
-                        <input 
-                            type="text" 
-                            placeholder='Search campus listings by title or description...' 
+                        <input
+                            type="text"
+                            placeholder='Search campus listings by title or description...'
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    
+
                     <div className="actions-wrapper">
-                        <button 
+                        <button
                             type="button"
                             className="rent-switch-btn"
                             onClick={() => navigate('/rent')}
                         >
                             🏠 Rent Store
                         </button>
-                        
-                        <button 
+
+                        <button
                             type="button"
                             className="sell-btn"
                             onClick={() => {
@@ -415,8 +415,8 @@ const OrderHome = () => {
                                 {sortedProducts.map(product => {
                                     const isMine = isOwnListing(product);
                                     return (
-                                        <div 
-                                            key={product.id} 
+                                        <div
+                                            key={product.id}
                                             className={`product-card ${isMine ? 'own-card' : ''}`}
                                             onClick={() => {
                                                 setSelectedProduct(product);
@@ -424,9 +424,9 @@ const OrderHome = () => {
                                             }}
                                         >
                                             <div className="product-card-img-wrapper">
-                                                <img 
-                                                    src={product.photo || 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=400&auto=format&fit=crop'} 
-                                                    alt={product.name} 
+                                                <img
+                                                    src={product.photo || 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=400&auto=format&fit=crop'}
+                                                    alt={product.name}
                                                     className="product-card-img"
                                                     onError={(e) => {
                                                         e.target.onerror = null;
@@ -448,10 +448,10 @@ const OrderHome = () => {
                                                     <span className="meta-item">⏱️ {product.handleTime || 'Immediate'}</span>
                                                     <span className="meta-item">👤 @{product.sellerUsername || product.seller || 'Student'}</span>
                                                 </div>
-                                                
+
                                                 <div className="card-actions">
                                                     {isMine ? (
-                                                        <button 
+                                                        <button
                                                             className="card-view-btn"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
@@ -461,7 +461,7 @@ const OrderHome = () => {
                                                             Manage in Profile
                                                         </button>
                                                     ) : (
-                                                        <button 
+                                                        <button
                                                             className="card-buy-btn"
                                                             onClick={(e) => handleInitiateBuy(product, e)}
                                                         >
@@ -517,8 +517,8 @@ const OrderHome = () => {
                                                 </span>
                                             </div>
                                             <div className="order-card-body">
-                                                <img 
-                                                    src={order.itemPhoto || 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=400&auto=format&fit=crop'} 
+                                                <img
+                                                    src={order.itemPhoto || 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=400&auto=format&fit=crop'}
                                                     alt={order.itemName}
                                                     className="order-img"
                                                     onError={(e) => {
@@ -555,8 +555,8 @@ const OrderHome = () => {
                         <button className="modal-close" onClick={() => setShowDetailsModal(false)}>×</button>
                         <div className="details-modal-grid">
                             <div className="details-modal-left">
-                                <img 
-                                    src={selectedProduct.photo || 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=400&auto=format&fit=crop'} 
+                                <img
+                                    src={selectedProduct.photo || 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=400&auto=format&fit=crop'}
                                     alt={selectedProduct.name}
                                     onError={(e) => {
                                         e.target.onerror = null;
@@ -574,10 +574,10 @@ const OrderHome = () => {
                                         <span className="own-badge modal">Your Listing</span>
                                     )}
                                 </div>
-                                
+
                                 <h2 className="detail-title">{selectedProduct.name}</h2>
                                 <div className="detail-price">₹{selectedProduct.price}</div>
-                                
+
                                 <div className="detail-info-block">
                                     <div className="info-row">
                                         <span className="info-label">⏱️ Handover Time:</span>
@@ -602,7 +602,7 @@ const OrderHome = () => {
 
                                 <div className="modal-action-buttons">
                                     {isOwnListing(selectedProduct) ? (
-                                        <button 
+                                        <button
                                             className="modal-manage-btn"
                                             onClick={() => {
                                                 setShowDetailsModal(false);
@@ -612,14 +612,14 @@ const OrderHome = () => {
                                             👤 View & Manage in Profile
                                         </button>
                                     ) : (
-                                        <button 
+                                        <button
                                             className="modal-buy-btn"
                                             onClick={() => handleInitiateBuy(selectedProduct)}
                                         >
                                             ⚡ Buy This Item Now
                                         </button>
                                     )}
-                                    <a 
+                                    <a
                                         href={`tel:${selectedProduct.contact}`}
                                         className="contact-call-btn"
                                     >
@@ -643,8 +643,8 @@ const OrderHome = () => {
                         </p>
 
                         <div className="buy-summary-card">
-                            <img 
-                                src={selectedProduct.photo || 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=400&auto=format&fit=crop'} 
+                            <img
+                                src={selectedProduct.photo || 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=400&auto=format&fit=crop'}
                                 alt={selectedProduct.name}
                                 className="buy-summary-thumb"
                             />
@@ -659,9 +659,9 @@ const OrderHome = () => {
 
                         <div className="form-group" style={{ marginTop: '16px' }}>
                             <label>Your Contact Number (for seller coordination)</label>
-                            <input 
-                                type="text" 
-                                placeholder="e.g. 9876543210" 
+                            <input
+                                type="text"
+                                placeholder="e.g. 9876543210"
                                 value={buyerContact}
                                 onChange={(e) => setBuyerContact(e.target.value)}
                             />
@@ -671,8 +671,8 @@ const OrderHome = () => {
                             <button type="button" className="cancel-btn" onClick={() => setShowBuyModal(false)}>
                                 Cancel
                             </button>
-                            <button 
-                                type="button" 
+                            <button
+                                type="button"
                                 className="submit-btn buy-confirm-btn"
                                 onClick={handleConfirmPurchase}
                                 disabled={isBuying}
@@ -696,31 +696,31 @@ const OrderHome = () => {
                             <div className="form-grid">
                                 <div className="form-group">
                                     <label>Product Name / Headline *</label>
-                                    <input 
-                                        type="text" 
-                                        name="name" 
-                                        value={formData.name} 
-                                        onChange={handleInputChange} 
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        value={formData.name}
+                                        onChange={handleInputChange}
                                         placeholder="e.g. Casio fx-991EX Calculator"
-                                        required 
+                                        required
                                     />
                                 </div>
                                 <div className="form-group">
                                     <label>Selling Price (₹) *</label>
-                                    <input 
-                                        type="number" 
-                                        name="price" 
-                                        value={formData.price} 
-                                        onChange={handleInputChange} 
+                                    <input
+                                        type="number"
+                                        name="price"
+                                        value={formData.price}
+                                        onChange={handleInputChange}
                                         placeholder="e.g. 500"
-                                        required 
+                                        required
                                     />
                                 </div>
                                 <div className="form-group">
                                     <label>Category *</label>
-                                    <select 
-                                        name="category" 
-                                        value={formData.category} 
+                                    <select
+                                        name="category"
+                                        value={formData.category}
                                         onChange={handleInputChange}
                                     >
                                         <option value="Books">Books</option>
@@ -733,9 +733,9 @@ const OrderHome = () => {
                                 </div>
                                 <div className="form-group">
                                     <label>Condition</label>
-                                    <select 
-                                        name="condition" 
-                                        value={formData.condition} 
+                                    <select
+                                        name="condition"
+                                        value={formData.condition}
                                         onChange={handleInputChange}
                                     >
                                         <option value="Brand New">Brand New</option>
@@ -746,51 +746,51 @@ const OrderHome = () => {
                                 </div>
                                 <div className="form-group">
                                     <label>Handover Time (Handle Time)</label>
-                                    <input 
-                                        type="text" 
-                                        name="handleTime" 
-                                        value={formData.handleTime} 
-                                        onChange={handleInputChange} 
+                                    <input
+                                        type="text"
+                                        name="handleTime"
+                                        value={formData.handleTime}
+                                        onChange={handleInputChange}
                                         placeholder="e.g. Immediate, Within 24 hours"
                                     />
                                 </div>
                                 <div className="form-group">
                                     <label>Contact Number *</label>
-                                    <input 
-                                        type="text" 
-                                        name="contact" 
-                                        value={formData.contact} 
-                                        onChange={handleInputChange} 
+                                    <input
+                                        type="text"
+                                        name="contact"
+                                        value={formData.contact}
+                                        onChange={handleInputChange}
                                         placeholder="e.g. 9876543210"
-                                        required 
+                                        required
                                     />
                                 </div>
                                 <div className="form-group full-width">
                                     <label>Image Upload / Paste URL</label>
-                                    <input 
-                                        type="text" 
-                                        name="photo" 
-                                        value={formData.photo} 
-                                        onChange={handleInputChange} 
+                                    <input
+                                        type="text"
+                                        name="photo"
+                                        value={formData.photo}
+                                        onChange={handleInputChange}
                                         placeholder="Paste image URL (optional)"
                                     />
                                     <div className="file-input-wrapper">
                                         <span>Or Upload File: </span>
-                                        <input 
-                                            type="file" 
-                                            accept="image/*" 
+                                        <input
+                                            type="file"
+                                            accept="image/*"
                                             onChange={handleFileChange}
                                         />
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div className="form-group full-width">
                                 <label>Description</label>
-                                <textarea 
-                                    name="description" 
-                                    value={formData.description} 
-                                    onChange={handleInputChange} 
+                                <textarea
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleInputChange}
                                     placeholder="Enter item details (condition, semester used, etc.)"
                                     rows="3"
                                 />

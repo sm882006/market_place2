@@ -374,4 +374,4 @@ const Rent = () => {
   );
 };
 
-export default Rent;
+export default Rent;

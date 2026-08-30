@@ -99,8 +99,8 @@ const BuySell = () => {
           <button className="sell-btn" onClick={() => navigate('/sell-item')}>
             + Sell Your Item
           </button>
-          <button 
-            className="sell-btn" 
+          <button
+            className="sell-btn"
             style={{ background: 'rgba(255,255,255,0.6)', color: '#1a4a55', border: '1px solid rgba(255,255,255,0.8)' }}
             onClick={() => navigate('/profile')}
           >
@@ -263,7 +263,7 @@ const BuySell = () => {
             </span>
             <h2 style={{ fontSize: '1.4rem', color: '#1a4a55', margin: '10px 0 4px' }}>{selectedProduct.name}</h2>
             <div style={{ fontSize: '1.4rem', fontWeight: '800', color: '#10b981', marginBottom: '12px' }}>₹{selectedProduct.price}</div>
-            
+
             <p style={{ color: '#475569', fontSize: '0.92rem', lineHeight: '1.5', marginBottom: '16px' }}>
               {selectedProduct.description || 'No description provided.'}
             </p>
@@ -314,4 +314,4 @@ const BuySell = () => {
   );
 };
 
-export default BuySell;
+export default BuySell;

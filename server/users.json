@@ -75,5 +75,89 @@
     "email": "bob_1788117519118@pict.edu",
     "password": "$2b$10$z2FEo.HUhYVCo8NYgfi2GeP5dTrBPpz802fdaQ87Yju4Bv5lKdPz2",
     "createdAt": "2026-08-30T19:18:39.284Z"
+  },
+  {
+    "id": "1788120714742",
+    "username": "seller_1788120714571",
+    "email": "seller_1788120714571@pict.edu",
+    "password": "$2b$10$lJ5hPE1dSSDzGZY5BDzO3uFs2zpgKqvjsdzFWmsXNJS7Bi0Xo8iKm",
+    "createdAt": "2026-08-30T20:11:54.742Z"
+  },
+  {
+    "id": "1788120714837",
+    "username": "buyer_1788120714571",
+    "email": "buyer_1788120714571@pict.edu",
+    "password": "$2b$10$z14tML9/Q6TMyQpPobGxSOr06gq.GcUP/9L1MBUNnyjmGaTEOWmi.",
+    "createdAt": "2026-08-30T20:11:54.838Z"
+  },
+  {
+    "id": "1788120791144",
+    "username": "seller_1788120790961",
+    "email": "seller_1788120790961@pict.edu",
+    "password": "$2b$10$bnNPnalV1CN2tIPVdEBVkeo4jEKU7msbHP760Vwnu735AzBupsq5S",
+    "createdAt": "2026-08-30T20:13:11.144Z"
+  },
+  {
+    "id": "1788120791295",
+    "username": "buyer_1788120790961",
+    "email": "buyer_1788120790961@pict.edu",
+    "password": "$2b$10$L/q7Mhi0/9RxrMmwcP4tN.CHUlNoEossDvhthnB7Nblmhbo0FbawK",
+    "createdAt": "2026-08-30T20:13:11.295Z"
+  },
+  {
+    "id": "1788121973057",
+    "username": "userA_1788121972871",
+    "email": "userA_1788121972871@pict.edu",
+    "password": "$2b$10$1aaVAwyYQz4k4Y9Jk5d55OaybegE58e9.Tz3qanwFuD4FMHWC1WJW",
+    "createdAt": "2026-08-30T20:32:53.057Z"
+  },
+  {
+    "id": "1788121973223",
+    "username": "userB_1788121972871",
+    "email": "userB_1788121972871@pict.edu",
+    "password": "$2b$10$Y1vZmdUERU5tOGjZGgyPYe92ViBDmPNQl6gOYkCm4MFJzPCTTAjVO",
+    "createdAt": "2026-08-30T20:32:53.223Z"
+  },
+  {
+    "id": "1788121973313",
+    "username": "userC_1788121972871",
+    "email": "userC_1788121972871@pict.edu",
+    "password": "$2b$10$4BRi2.nRzB7rWlbMhABzFO/dQ0Gk0Ny/1O.KDpseyU6nerXtWn4v6",
+    "createdAt": "2026-08-30T20:32:53.313Z"
+  },
+  {
+    "id": "1788123265250",
+    "username": "seller_1788123265075",
+    "email": "seller_1788123265075@pict.edu",
+    "password": "$2b$10$1Pp68ikBeynxEcWQE46stegCT32PoR1zTgVJfiI1lZumy25Zx0LeK",
+    "createdAt": "2026-08-30T20:54:25.250Z"
+  },
+  {
+    "id": "1788123265397",
+    "username": "buyer_1788123265075",
+    "email": "buyer_1788123265075@pict.edu",
+    "password": "$2b$10$i.y5NINS2aYXUMqAfmk6YOARqeOMTj/NXjSA.Xo4HOZrEzenW9LNq",
+    "createdAt": "2026-08-30T20:54:25.397Z"
+  },
+  {
+    "id": "1788123272510",
+    "username": "userA_1788123272308",
+    "email": "userA_1788123272308@pict.edu",
+    "password": "$2b$10$TNR9LQvGKcUisWvBrcDuMuzurzTDDlTX9KTl.vQjCHlc6WVLz26bm",
+    "createdAt": "2026-08-30T20:54:32.510Z"
+  },
+  {
+    "id": "1788123272609",
+    "username": "userB_1788123272308",
+    "email": "userB_1788123272308@pict.edu",
+    "password": "$2b$10$C.LbPsS1s.jEpti9F4eBQ.eFZigHggKkwcjuJjBrXuAmrAqTAUPxG",
+    "createdAt": "2026-08-30T20:54:32.609Z"
+  },
+  {
+    "id": "1788123272750",
+    "username": "userC_1788123272308",
+    "email": "userC_1788123272308@pict.edu",
+    "password": "$2b$10$fKLdCQPZD4BZJVJv2qw0aeLlxtauVhWAO0um.97vGCaZYBO.ViBr.",
+    "createdAt": "2026-08-30T20:54:32.750Z"
   }
 ]

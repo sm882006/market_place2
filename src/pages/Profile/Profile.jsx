@@ -1,17 +1,33 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import './Profile.css';
 
+const API = 'http://localhost:5001';
+
 const Profile = () => {
     const { user, token, logout, isAuthenticated, loading } = useAuth();
     const navigate = useNavigate();
+
     const [profileData, setProfileData] = useState(null);
     const [activities, setActivities] = useState([]);
     const [loadingActivity, setLoadingActivity] = useState(true);
     const [activityFilter, setActivityFilter] = useState('all');
-    const [fetchError, setFetchError] = useState('');
+    const [activeSection, setActiveSection] = useState('activity'); // 'activity' | 'notifications' | 'messages'
     const [actionMsg, setActionMsg] = useState('');
+    const [processingId, setProcessingId] = useState(null);
+
+    // Private Notifications state
+    const [notifications, setNotifications] = useState([]);
+    const [unreadNotifsCount, setUnreadNotifsCount] = useState(0);
+
+    // Private 1-on-1 Chats state
+    const [chats, setChats] = useState([]);
+    const [activeChat, setActiveChat] = useState(null);
+    const [messages, setMessages] = useState([]);
+    const [chatText, setChatText] = useState('');
+    const [sendingMsg, setSendingMsg] = useState(false);
+    const messagesEndRef = useRef(null);
 
     // Redirect if not logged in
     useEffect(() => {
@@ -20,12 +36,12 @@ const Profile = () => {
         }
     }, [loading, isAuthenticated, navigate]);
 
-    // Fetch profile and activity from backend
+    // Fetch user activity
     const loadUserActivity = useCallback(async () => {
         if (!token) return;
         try {
             setLoadingActivity(true);
-            const res = await fetch('/api/user/activity', {
+            const res = await fetch(`${API}/api/user/activity`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (res.ok) {
@@ -39,9 +55,43 @@ const Profile = () => {
         }
     }, [token]);
 
+    // Fetch private notifications
+    const loadNotifications = useCallback(async () => {
+        if (!token) return;
+        try {
+            const res = await fetch(`${API}/api/notifications`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setNotifications(data || []);
+                setUnreadNotifsCount(data.filter((n) => !n.isRead).length);
+            }
+        } catch (err) {
+            console.error('Error fetching notifications:', err);
+        }
+    }, [token]);
+
+    // Fetch private chat threads
+    const loadChats = useCallback(async () => {
+        if (!token) return;
+        try {
+            const res = await fetch(`${API}/api/chats`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setChats(data || []);
+            }
+        } catch (err) {
+            console.error('Error fetching chats:', err);
+        }
+    }, [token]);
+
+    // Initial loading and polling for logged-in user
     useEffect(() => {
         if (token) {
-            fetch('/api/profile', {
+            fetch(`${API}/api/profile`, {
                 headers: { Authorization: `Bearer ${token}` },
             })
                 .then((res) => res.json())
@@ -50,36 +100,135 @@ const Profile = () => {
                         setProfileData(data.user);
                     }
                 })
-                .catch(() => setFetchError('Failed to load profile'));
+                .catch(() => {});
 
             loadUserActivity();
-        }
-    }, [token, loadUserActivity]);
+            loadNotifications();
+            loadChats();
 
-    const handleLogout = () => {
-        logout();
-        navigate('/');
+            // Background polling every 10s for private updates
+            const timer = setInterval(() => {
+                loadNotifications();
+                loadChats();
+            }, 10000);
+            return () => clearInterval(timer);
+        }
+    }, [token, loadUserActivity, loadNotifications, loadChats]);
+
+    // Load active chat thread messages
+    const selectChat = async (chat) => {
+        setActiveChat(chat);
+        setActiveSection('messages');
+        if (!token) return;
+        try {
+            const res = await fetch(`${API}/api/chats/${chat.id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setMessages(data.messages || []);
+                setTimeout(() => {
+                    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+            }
+        } catch (err) {
+            console.error('Error loading chat:', err);
+        }
     };
 
-    // Delete an active listing
-    const handleDeleteListing = async (act) => {
-        if (!window.confirm(`Are you sure you want to remove "${act.title}"?`)) {
-            return;
+    // Send private message
+    const handleSendMessage = async (e) => {
+        e.preventDefault();
+        if (!chatText.trim() || !activeChat || !token) return;
+        setSendingMsg(true);
+        try {
+            const res = await fetch(`${API}/api/chats/${activeChat.id}/message`, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text: chatText.trim() }),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setMessages((prev) => [...prev, data.msg]);
+                setChatText('');
+                loadChats();
+                setTimeout(() => {
+                    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+            }
+        } catch (err) {
+            console.error('Message error:', err);
+        } finally {
+            setSendingMsg(false);
         }
+    };
 
-        let endpoint = '';
-        if (act.type === 'sell_listing') {
-            endpoint = `/api/products/${act.rawId}`;
-        } else if (act.type === 'rent_listing') {
-            endpoint = `/api/rents/${act.rawId}`;
-        } else if (act.type === 'lost_found_report') {
-            endpoint = `/api/lostfound/${act.rawId}`;
-        }
-
-        if (!endpoint) return;
+    // Seller approves sale directly
+    const handleApproveSale = async (actOrChat) => {
+        const prodId = actOrChat.rawId || actOrChat.productId || actOrChat.id;
+        const endpoint = actOrChat.approveEndpoint || `/api/products/${prodId}/approve-sale`;
+        setProcessingId(prodId);
 
         try {
-            const res = await fetch(endpoint, {
+            const res = await fetch(`${API}${endpoint}`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setActionMsg(`✅ Success! You approved the sale. Product is marked as Sold.`);
+                setTimeout(() => setActionMsg(''), 5000);
+                loadUserActivity();
+                loadNotifications();
+                loadChats();
+            } else {
+                alert(data.message || 'Failed to approve sale.');
+            }
+        } catch (err) {
+            alert('Network error while approving.');
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
+    // Seller declines request
+    const handleDeclineRequest = async (actOrChat) => {
+        const prodId = actOrChat.rawId || actOrChat.productId || actOrChat.id;
+        const endpoint = actOrChat.rejectEndpoint || `/api/products/${prodId}/reject-sale`;
+        if (!window.confirm('Decline this purchase request? The product will remain available.')) return;
+        setProcessingId(prodId);
+
+        try {
+            const res = await fetch(`${API}${endpoint}`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setActionMsg(`Request declined. Product is back to available.`);
+                setTimeout(() => setActionMsg(''), 4000);
+                loadUserActivity();
+                loadNotifications();
+                loadChats();
+            } else {
+                alert(data.message || 'Failed to decline request.');
+            }
+        } catch (err) {
+            alert('Network error while declining.');
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
+    // Delete listing
+    const handleDeleteListing = async (act) => {
+        if (!window.confirm(`Are you sure you want to remove "${act.title}"?`)) return;
+        const endpoint = act.deleteEndpoint || (act.type === 'sell_listing' ? `/api/products/${act.rawId}` : `/api/rents/${act.rawId}`);
+        try {
+            const res = await fetch(`${API}${endpoint}`, {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -87,20 +236,33 @@ const Profile = () => {
                 setActionMsg(`Listing "${act.title}" removed.`);
                 setTimeout(() => setActionMsg(''), 3500);
                 loadUserActivity();
-            } else {
-                const errData = await res.json();
-                alert(errData.message || 'Failed to remove listing.');
             }
         } catch (err) {
-            console.error('Delete error:', err);
             alert('Failed to remove item.');
         }
+    };
+
+    // Mark notification read
+    const markNotifRead = async (notifId) => {
+        try {
+            await fetch(`${API}/api/notifications/${notifId}/read`, {
+                method: 'PATCH',
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setNotifications((prev) => prev.map((n) => (n.id === notifId ? { ...n, isRead: true } : n)));
+            setUnreadNotifsCount((prev) => Math.max(0, prev - 1));
+        } catch (err) {}
+    };
+
+    const handleLogout = () => {
+        logout();
+        navigate('/');
     };
 
     if (loading) {
         return (
             <div className="profile-page">
-                <div className="profile-loading">Loading...</div>
+                <div className="profile-loading">Loading your profile...</div>
             </div>
         );
     }
@@ -118,73 +280,36 @@ const Profile = () => {
         ? displayUser.username.slice(0, 2).toUpperCase()
         : '??';
 
-    // Activity filtering logic
+    // Activity stats
+    const sellCount = activities.filter((a) => a.type === 'sell_listing').length;
+    const rentCount = activities.filter((a) => a.type === 'rent_listing').length;
+    const orderCount = activities.filter((a) => a.type === 'buy_order' || a.type === 'rent_order').length;
+    const pendingCount = activities.filter((a) => a.canApprove || a.type === 'pending_buy' || a.type === 'pending_rent').length;
+
+    // Filtered activity
     const filteredActivities = activities.filter((act) => {
         if (activityFilter === 'all') return true;
         if (activityFilter === 'selling') return act.type === 'sell_listing';
         if (activityFilter === 'renting') return act.type === 'rent_listing';
         if (activityFilter === 'orders') return act.type === 'buy_order' || act.type === 'rent_order';
+        if (activityFilter === 'pending') return act.status === 'pending' || act.type === 'pending_buy' || act.type === 'pending_rent';
         if (activityFilter === 'lostfound') return act.type === 'lost_found_report';
         return true;
     });
-
-    // Counts for stats
-    const sellCount = activities.filter((a) => a.type === 'sell_listing').length;
-    const rentCount = activities.filter((a) => a.type === 'rent_listing').length;
-    const orderCount = activities.filter((a) => a.type === 'buy_order' || a.type === 'rent_order').length;
-
-    // Helper for type badges
-    const getBadgeStyle = (act) => {
-        switch (act.type) {
-            case 'sell_listing':
-                return act.status === 'sold' ? 'badge-sold' : 'badge-sell';
-            case 'rent_listing':
-                return act.status === 'rented' ? 'badge-rented' : 'badge-rent';
-            case 'buy_order':
-                return 'badge-buy';
-            case 'rent_order':
-                return 'badge-rent-order';
-            case 'lost_found_report':
-                return act.status === 'claimed' ? 'badge-claimed' : 'badge-lostfound';
-            default:
-                return 'badge-general';
-        }
-    };
-
-    const getTypeIcon = (act) => {
-        switch (act.type) {
-            case 'sell_listing':
-                return act.status === 'sold' ? '🏷️' : '📦';
-            case 'rent_listing':
-                return act.status === 'rented' ? '🔑' : '🏠';
-            case 'buy_order':
-                return '🛒';
-            case 'rent_order':
-                return '🤝';
-            case 'lost_found_report':
-                return '🔍';
-            default:
-                return '📄';
-        }
-    };
 
     return (
         <div className="profile-page">
             {/* ─── Left: Profile Card ─── */}
             <div className="profile-card">
-                {/* Avatar */}
                 <div className="profile-avatar">
                     <span className="profile-initials">{initials}</span>
                 </div>
 
-                {/* User Info */}
                 <h2 className="profile-username">{displayUser?.username || 'User'}</h2>
                 <p className="profile-email">{displayUser?.email || 'No email'}</p>
 
-                {/* Divider */}
                 <div className="profile-divider"></div>
 
-                {/* Stats Summary */}
                 <div className="profile-stats-grid">
                     <div className="profile-stat-box">
                         <span className="stat-num">{sellCount}</span>
@@ -200,7 +325,6 @@ const Profile = () => {
                     </div>
                 </div>
 
-                {/* Details */}
                 <div className="profile-details">
                     <div className="profile-detail-row">
                         <span className="detail-icon">👤</span>
@@ -227,27 +351,24 @@ const Profile = () => {
                     </div>
                 </div>
 
-                {fetchError && <p className="profile-error">{fetchError}</p>}
-                {actionMsg && <p className="profile-success">{actionMsg}</p>}
+                {actionMsg && <div className="profile-success-banner">{actionMsg}</div>}
 
-                {/* Logout Button */}
                 <button className="profile-logout-btn" onClick={handleLogout}>
                     Log Out
                 </button>
 
-                {/* Back to Home */}
                 <button className="profile-back" onClick={() => navigate('/')}>
                     ← Back to Home
                 </button>
             </div>
 
-            {/* ─── Right Panel ─── */}
+            {/* ─── Right Panel: Private Dashboard ─── */}
             <div className="rightpart">
-                {/* ── 3 Quick Action Buttons ── */}
+                {/* 3 Quick Navigation Buttons */}
                 <div className="options">
                     <button className="option-btn" onClick={() => navigate('/orderhome')}>
                         <span className="opt-icon">🛒</span>
-                        <span>Buy & Sell Items</span>
+                        <span>Buy &amp; Sell Store</span>
                     </button>
 
                     <button className="option-btn" onClick={() => navigate('/rent')}>
@@ -257,140 +378,390 @@ const Profile = () => {
 
                     <button className="option-btn" onClick={() => navigate('/lostfound')}>
                         <span className="opt-icon">🔍</span>
-                        <span>Lost & Found</span>
+                        <span>Lost &amp; Found</span>
                     </button>
                 </div>
 
-                {/* ── Activity History ── */}
-                <div className="history">
-                    <div className="history-header">
-                        <h2>📋 Your Activity</h2>
-                        <span className="activity-count-tag">{filteredActivities.length} items</span>
-                    </div>
+                {/* Private Section Navigation Tabs */}
+                <div className="profile-section-nav">
+                    <button
+                        className={`sec-nav-btn ${activeSection === 'activity' ? 'active' : ''}`}
+                        onClick={() => setActiveSection('activity')}
+                    >
+                        📋 Your Activity ({activities.length})
+                    </button>
 
-                    {/* Filter Tabs */}
-                    <div className="activity-tabs">
-                        <button
-                            className={`activity-tab ${activityFilter === 'all' ? 'active' : ''}`}
-                            onClick={() => setActivityFilter('all')}
-                        >
-                            All ({activities.length})
-                        </button>
-                        <button
-                            className={`activity-tab ${activityFilter === 'selling' ? 'active' : ''}`}
-                            onClick={() => setActivityFilter('selling')}
-                        >
-                            Selling ({sellCount})
-                        </button>
-                        <button
-                            className={`activity-tab ${activityFilter === 'renting' ? 'active' : ''}`}
-                            onClick={() => setActivityFilter('renting')}
-                        >
-                            Renting ({rentCount})
-                        </button>
-                        <button
-                            className={`activity-tab ${activityFilter === 'orders' ? 'active' : ''}`}
-                            onClick={() => setActivityFilter('orders')}
-                        >
-                            Orders ({orderCount})
-                        </button>
-                        <button
-                            className={`activity-tab ${activityFilter === 'lostfound' ? 'active' : ''}`}
-                            onClick={() => setActivityFilter('lostfound')}
-                        >
-                            Lost & Found
-                        </button>
-                    </div>
+                    <button
+                        className={`sec-nav-btn ${activeSection === 'notifications' ? 'active' : ''}`}
+                        onClick={() => setActiveSection('notifications')}
+                    >
+                        🔔 Notifications {unreadNotifsCount > 0 && <span className="notif-pill">{unreadNotifsCount} new</span>}
+                    </button>
 
-                    {loadingActivity ? (
-                        <div className="activity-loading">
-                            <div className="spinner-sm"></div>
-                            <span>Loading your personal activity...</span>
+                    <button
+                        className={`sec-nav-btn ${activeSection === 'messages' ? 'active' : ''}`}
+                        onClick={() => setActiveSection('messages')}
+                    >
+                        💬 Private Messages ({chats.length})
+                    </button>
+                </div>
+
+                {/* ════════════ SECTION 1: YOUR ACTIVITY ════════════ */}
+                {activeSection === 'activity' && (
+                    <div className="history">
+                        <div className="history-header">
+                            <h2>Your Listings &amp; Orders</h2>
+                            <span className="activity-count-tag">{filteredActivities.length} items</span>
                         </div>
-                    ) : filteredActivities.length === 0 ? (
-                        <div className="empty-activity">
-                            <div className="empty-icon">📭</div>
-                            <h3>No activity found</h3>
-                            <p>
-                                {activityFilter === 'all'
-                                    ? "You haven't listed or bought any items yet. Start by exploring campus deals!"
-                                    : `You have no ${activityFilter} activity recorded yet.`}
-                            </p>
-                            <div className="empty-actions">
-                                <button className="cta-btn primary" onClick={() => navigate('/orderhome')}>
-                                    + List or Buy Items
+
+                        {/* Filter Tabs */}
+                        <div className="activity-tabs">
+                            <button
+                                className={`activity-tab ${activityFilter === 'all' ? 'active' : ''}`}
+                                onClick={() => setActivityFilter('all')}
+                            >
+                                All ({activities.length})
+                            </button>
+                            {pendingCount > 0 && (
+                                <button
+                                    className={`activity-tab ${activityFilter === 'pending' ? 'active' : ''}`}
+                                    onClick={() => setActivityFilter('pending')}
+                                    style={{ color: '#d97706', fontWeight: '700' }}
+                                >
+                                    ⏳ Pending Requests ({pendingCount})
                                 </button>
-                                <button className="cta-btn secondary" onClick={() => navigate('/rent-item')}>
-                                    + Rent Out Items
-                                </button>
+                            )}
+                            <button
+                                className={`activity-tab ${activityFilter === 'selling' ? 'active' : ''}`}
+                                onClick={() => setActivityFilter('selling')}
+                            >
+                                Selling ({sellCount})
+                            </button>
+                            <button
+                                className={`activity-tab ${activityFilter === 'renting' ? 'active' : ''}`}
+                                onClick={() => setActivityFilter('renting')}
+                            >
+                                Renting ({rentCount})
+                            </button>
+                            <button
+                                className={`activity-tab ${activityFilter === 'orders' ? 'active' : ''}`}
+                                onClick={() => setActivityFilter('orders')}
+                            >
+                                Orders ({orderCount})
+                            </button>
+                        </div>
+
+                        {loadingActivity ? (
+                            <div className="activity-loading">
+                                <div className="spinner-sm"></div>
+                                <span>Loading your personal activity...</span>
                             </div>
-                        </div>
-                    ) : (
-                        <div className="history-list">
-                            {filteredActivities.map((act) => (
-                                <div key={act.id} className="history-item">
-                                    <img
-                                        src={
-                                            act.photo ||
-                                            'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=400&auto=format&fit=crop'
-                                        }
-                                        alt={act.title}
-                                        className="history-image"
-                                        onError={(e) => {
-                                            e.target.onerror = null;
-                                            e.target.src =
-                                                'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=400&auto=format&fit=crop';
-                                        }}
-                                    />
-                                    <div className="history-info">
-                                        <div className="history-top-row">
-                                            <h4>{act.title}</h4>
-                                            {act.price !== undefined && act.price !== null && (
-                                                <span className="history-price">
-                                                    ₹{act.price}
-                                                    {act.priceUnit || ''}
+                        ) : filteredActivities.length === 0 ? (
+                            <div className="empty-activity">
+                                <div className="empty-icon">📭</div>
+                                <h3>No activity found</h3>
+                                <p>You haven't listed or ordered any items in this category yet.</p>
+                                <div className="empty-actions">
+                                    <button className="cta-btn primary" onClick={() => navigate('/orderhome')}>
+                                        + List or Buy Items
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="history-list">
+                                {filteredActivities.map((act) => (
+                                    <div key={act.id} className="history-item">
+                                        <img
+                                            src={
+                                                act.photo ||
+                                                'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=400&auto=format&fit=crop'
+                                            }
+                                            alt={act.title}
+                                            className="history-image"
+                                            onError={(e) => {
+                                                e.target.onerror = null;
+                                                e.target.src =
+                                                    'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=400&auto=format&fit=crop';
+                                            }}
+                                        />
+                                        <div className="history-info">
+                                            <div className="history-top-row">
+                                                <h4>{act.title}</h4>
+                                                {act.price !== undefined && act.price !== null && (
+                                                    <span className="history-price">
+                                                        ₹{act.price}
+                                                        {act.priceUnit || ''}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            <div className="history-mid-row">
+                                                <span className={`status-badge ${act.status === 'sold' ? 'badge-sold' : act.status === 'pending' ? 'badge-pending' : 'badge-sell'}`}>
+                                                    {act.status === 'sold' ? '🏷️' : act.status === 'pending' ? '⏳' : '📦'} {act.statusLabel}
                                                 </span>
+                                                {act.category && <span className="history-cat">{act.category}</span>}
+                                                <span className="history-date">
+                                                    {new Date(act.date).toLocaleDateString()}
+                                                </span>
+                                            </div>
+
+                                            {act.details && <p className="history-desc">{act.details}</p>}
+
+                                            {/* Actionable Controls for Seller on Pending Requests */}
+                                            {act.canApprove && (
+                                                <div className="pending-actions-row">
+                                                    <button
+                                                        className="approve-btn"
+                                                        onClick={() => handleApproveSale(act)}
+                                                        disabled={processingId === act.rawId}
+                                                    >
+                                                        {processingId === act.rawId ? 'Processing...' : '✅ Approve & Mark Sold'}
+                                                    </button>
+
+                                                    <button
+                                                        className="decline-btn"
+                                                        onClick={() => handleDeclineRequest(act)}
+                                                        disabled={processingId === act.rawId}
+                                                    >
+                                                        ❌ Decline
+                                                    </button>
+
+                                                    <button
+                                                        className="chat-action-btn"
+                                                        onClick={() => {
+                                                            const matchChat = chats.find((c) => c.productId === act.rawId || c.rentId === act.rawId);
+                                                            if (matchChat) {
+                                                                selectChat(matchChat);
+                                                            } else {
+                                                                setActiveSection('messages');
+                                                            }
+                                                        }}
+                                                    >
+                                                        💬 Private Chat
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {/* For Buyer on outgoing pending request */}
+                                            {(act.type === 'pending_buy' || act.type === 'pending_rent') && (
+                                                <div style={{ marginTop: '8px' }}>
+                                                    <button
+                                                        className="chat-action-btn"
+                                                        onClick={() => {
+                                                            const matchChat = chats.find((c) => c.productId === act.rawId || c.rentId === act.rawId);
+                                                            if (matchChat) selectChat(matchChat);
+                                                            else setActiveSection('messages');
+                                                        }}
+                                                    >
+                                                        💬 Chat with Seller
+                                                    </button>
+                                                </div>
                                             )}
                                         </div>
 
-                                        <div className="history-mid-row">
-                                            <span className={`status-badge ${getBadgeStyle(act)}`}>
-                                                {getTypeIcon(act)} {act.statusLabel}
+                                        {act.canDelete && (
+                                            <button
+                                                className="delete-activity-btn"
+                                                title="Delete listing"
+                                                onClick={() => handleDeleteListing(act)}
+                                            >
+                                                🗑️
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ════════════ SECTION 2: PRIVATE NOTIFICATIONS ════════════ */}
+                {activeSection === 'notifications' && (
+                    <div className="profile-notifs-box">
+                        <div className="history-header">
+                            <h2>🔔 Your Private Notifications</h2>
+                            <span className="activity-count-tag">{notifications.length} total</span>
+                        </div>
+
+                        {notifications.length === 0 ? (
+                            <div className="empty-activity">
+                                <div className="empty-icon">🔔</div>
+                                <h3>No notifications</h3>
+                                <p>You will receive private notifications when other students request your items or send messages.</p>
+                            </div>
+                        ) : (
+                            <div className="profile-notif-list">
+                                {notifications.map((notif) => (
+                                    <div
+                                        key={notif.id}
+                                        className={`profile-notif-card ${!notif.isRead ? 'unread' : ''}`}
+                                        onClick={() => markNotifRead(notif.id)}
+                                    >
+                                        <div className="notif-card-header">
+                                            <span className="notif-type-tag">
+                                                {notif.type.includes('request') ? '📩 Request' : notif.type.includes('approved') ? '🎉 Approved' : '💬 Message'}
                                             </span>
-                                            {act.category && (
-                                                <span className="history-cat">{act.category}</span>
-                                            )}
-                                            <span className="history-date">
-                                                {new Date(act.date).toLocaleDateString('en-US', {
-                                                    month: 'short',
-                                                    day: 'numeric',
-                                                    year: 'numeric',
-                                                })}
+                                            <span className="notif-time-tag">
+                                                {new Date(notif.createdAt).toLocaleString()}
                                             </span>
                                         </div>
 
-                                        {act.details && (
-                                            <p className="history-desc">{act.details}</p>
+                                        <p className="notif-card-message">{notif.message}</p>
+
+                                        {/* Quick Actions inside Notification */}
+                                        {(notif.type === 'buy_request' || notif.type === 'rent_request') && (
+                                            <div className="notif-quick-actions" onClick={(e) => e.stopPropagation()}>
+                                                <button
+                                                    className="approve-btn small"
+                                                    onClick={() => handleApproveSale({ rawId: notif.productId || notif.rentId, approveEndpoint: notif.type === 'buy_request' ? `/api/products/${notif.productId}/approve-sale` : `/api/rents/${notif.rentId}/approve-rent` })}
+                                                >
+                                                    ✅ Approve
+                                                </button>
+                                                <button
+                                                    className="decline-btn small"
+                                                    onClick={() => handleDeclineRequest({ rawId: notif.productId || notif.rentId, rejectEndpoint: notif.type === 'buy_request' ? `/api/products/${notif.productId}/reject-sale` : `/api/rents/${notif.rentId}/reject-rent` })}
+                                                >
+                                                    ❌ Decline
+                                                </button>
+                                                <button
+                                                    className="chat-action-btn small"
+                                                    onClick={() => {
+                                                        const matchChat = chats.find((c) => c.productId === notif.productId || c.rentId === notif.rentId);
+                                                        if (matchChat) selectChat(matchChat);
+                                                        else setActiveSection('messages');
+                                                    }}
+                                                >
+                                                    💬 Chat
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ════════════ SECTION 3: PRIVATE 1-ON-1 CHATS ════════════ */}
+                {activeSection === 'messages' && (
+                    <div className="profile-chats-container">
+                        {/* Left: Chat Threads List */}
+                        <div className="chats-sidebar">
+                            <h3 className="chats-sidebar-title">💬 Conversations</h3>
+                            {chats.length === 0 ? (
+                                <p className="no-chats-msg">No active conversations yet. When someone requests an item, a private chat will appear here.</p>
+                            ) : (
+                                <div className="chats-threads-list">
+                                    {chats.map((chat) => {
+                                        const otherPerson = chat.buyerId === user?.id ? chat.sellerUsername : chat.buyerUsername;
+                                        const isSelected = activeChat?.id === chat.id;
+                                        return (
+                                            <div
+                                                key={chat.id}
+                                                className={`chat-thread-card ${isSelected ? 'active' : ''}`}
+                                                onClick={() => selectChat(chat)}
+                                            >
+                                                <div className="thread-avatar">
+                                                    {otherPerson?.slice(0, 2).toUpperCase()}
+                                                </div>
+                                                <div className="thread-info">
+                                                    <div className="thread-top">
+                                                        <span className="thread-username">@{otherPerson}</span>
+                                                        <span className="thread-badge">{chat.productName || 'Item'}</span>
+                                                    </div>
+                                                    <div className="thread-last-msg">
+                                                        {chat.messages && chat.messages.length > 0
+                                                            ? chat.messages[chat.messages.length - 1].text
+                                                            : 'Click to start chatting'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Right: Active Chat Conversation */}
+                        <div className="chats-main-panel">
+                            {activeChat ? (
+                                <div className="active-chat-box">
+                                    <div className="active-chat-header">
+                                        <div className="active-chat-header-info">
+                                            <h4>
+                                                Chat with @{activeChat.buyerId === user?.id ? activeChat.sellerUsername : activeChat.buyerUsername}
+                                            </h4>
+                                            <span className="active-item-title">📦 Item: {activeChat.productName}</span>
+                                        </div>
+
+                                        {/* Seller Quick Approve Bar inside Chat */}
+                                        {activeChat.sellerId === user?.id && (
+                                            <div className="chat-seller-controls">
+                                                <button
+                                                    className="approve-btn small"
+                                                    onClick={() => handleApproveSale({ rawId: activeChat.productId || activeChat.rentId })}
+                                                >
+                                                    ✅ Approve Sale
+                                                </button>
+                                                <button
+                                                    className="decline-btn small"
+                                                    onClick={() => handleDeclineRequest({ rawId: activeChat.productId || activeChat.rentId })}
+                                                >
+                                                    ❌ Decline
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
 
-                                    {act.canDelete && (
-                                        <button
-                                            className="delete-activity-btn"
-                                            title="Delete listing"
-                                            onClick={() => handleDeleteListing(act)}
-                                        >
-                                            🗑️
+                                    {/* Messages list */}
+                                    <div className="chat-messages-scroll">
+                                        {messages.length === 0 ? (
+                                            <div className="empty-messages-note">
+                                                👋 This is a private 1-on-1 chat between you and @{activeChat.buyerId === user?.id ? activeChat.sellerUsername : activeChat.buyerUsername}.
+                                            </div>
+                                        ) : (
+                                            messages.map((m) => {
+                                                const isMe = m.senderId === user?.id;
+                                                return (
+                                                    <div key={m.id} className={`msg-row ${isMe ? 'me' : 'other'}`}>
+                                                        <div className="msg-bubble">
+                                                            <div className="msg-sender">@{m.senderUsername}</div>
+                                                            <div className="msg-content">{m.text}</div>
+                                                            <div className="msg-time">{new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })
+                                        )}
+                                        <div ref={messagesEndRef} />
+                                    </div>
+
+                                    {/* Message input */}
+                                    <form className="chat-input-bar" onSubmit={handleSendMessage}>
+                                        <input
+                                            type="text"
+                                            placeholder="Type a message (e.g. Can we meet near library at 3 PM?)..."
+                                            value={chatText}
+                                            onChange={(e) => setChatText(e.target.value)}
+                                        />
+                                        <button type="submit" disabled={sendingMsg || !chatText.trim()}>
+                                            Send
                                         </button>
-                                    )}
+                                    </form>
                                 </div>
-                            ))}
+                            ) : (
+                                <div className="no-chat-selected">
+                                    <div className="empty-icon">💬</div>
+                                    <h3>Select a Conversation</h3>
+                                    <p>Click on any thread on the left to read messages and chat directly with the buyer or seller.</p>
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
         </div>
     );
 };
 
-export default Profile;
+export default Profile;

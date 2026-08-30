@@ -1,0 +1,132 @@
+[
+  {
+    "id": "chat_1788120714863",
+    "productId": "prod_1788120714849",
+    "rentId": null,
+    "productName": "TI-84 Plus Graphing Calculator",
+    "productPhoto": "",
+    "buyerId": "1788120714837",
+    "buyerUsername": "buyer_1788120714571",
+    "sellerId": "1788120714742",
+    "sellerUsername": "seller_1788120714571",
+    "messages": [
+      {
+        "id": "msg_1788120714865",
+        "senderId": "1788120714837",
+        "senderUsername": "buyer_1788120714571",
+        "text": "Hi! Can I test the calculator at PICT Library before buying?",
+        "timestamp": "2026-08-30T20:11:54.865Z"
+      },
+      {
+        "id": "msg_1788120714902_ynyj",
+        "senderId": "1788120714837",
+        "senderUsername": "buyer_1788120714571",
+        "text": "Are you available today around 4 PM?",
+        "timestamp": "2026-08-30T20:11:54.902Z"
+      },
+      {
+        "id": "msg_1788120714907_z15a",
+        "senderId": "1788120714742",
+        "senderUsername": "seller_1788120714571",
+        "text": "Yes, let us meet near the canteen!",
+        "timestamp": "2026-08-30T20:11:54.907Z"
+      }
+    ],
+    "createdAt": "2026-08-30T20:11:54.863Z",
+    "lastMessageAt": "2026-08-30T20:11:54.907Z"
+  },
+  {
+    "id": "chat_1788120791320",
+    "productId": "prod_1788120791304",
+    "rentId": null,
+    "productName": "TI-84 Plus Graphing Calculator",
+    "productPhoto": "",
+    "buyerId": "1788120791295",
+    "buyerUsername": "buyer_1788120790961",
+    "sellerId": "1788120791144",
+    "sellerUsername": "seller_1788120790961",
+    "messages": [
+      {
+        "id": "msg_1788120791321",
+        "senderId": "1788120791295",
+        "senderUsername": "buyer_1788120790961",
+        "text": "Hi! Can I test the calculator at PICT Library before buying?",
+        "timestamp": "2026-08-30T20:13:11.321Z"
+      },
+      {
+        "id": "msg_1788120791348_r4wm",
+        "senderId": "1788120791295",
+        "senderUsername": "buyer_1788120790961",
+        "text": "Are you available today around 4 PM?",
+        "timestamp": "2026-08-30T20:13:11.348Z"
+      },
+      {
+        "id": "msg_1788120791353_ga8c",
+        "senderId": "1788120791144",
+        "senderUsername": "seller_1788120790961",
+        "text": "Yes, let us meet near the canteen!",
+        "timestamp": "2026-08-30T20:13:11.353Z"
+      }
+    ],
+    "createdAt": "2026-08-30T20:13:11.320Z",
+    "lastMessageAt": "2026-08-30T20:13:11.353Z"
+  },
+  {
+    "id": "chat_1788121973355",
+    "productId": "prod_1788121973334",
+    "rentId": null,
+    "productName": "Engineering Mathematics Volume 3",
+    "productPhoto": "",
+    "buyerId": "1788121973223",
+    "buyerUsername": "userB_1788121972871",
+    "sellerId": "1788121973057",
+    "sellerUsername": "userA_1788121972871",
+    "messages": [
+      {
+        "id": "msg_1788121973356",
+        "senderId": "1788121973223",
+        "senderUsername": "userB_1788121972871",
+        "text": "Hi User A! Can we meet at the PICT Canteen today at 4 PM to test and exchange?",
+        "timestamp": "2026-08-30T20:32:53.356Z"
+      },
+      {
+        "id": "msg_1788121973400_oa4d",
+        "senderId": "1788121973057",
+        "senderUsername": "userA_1788121972871",
+        "text": "Yes, 4 PM near Table 5 works for me!",
+        "timestamp": "2026-08-30T20:32:53.400Z"
+      }
+    ],
+    "createdAt": "2026-08-30T20:32:53.355Z",
+    "lastMessageAt": "2026-08-30T20:32:53.400Z"
+  },
+  {
+    "id": "chat_1788123272783",
+    "productId": "prod_1788123272760",
+    "rentId": null,
+    "productName": "Engineering Mathematics Volume 3",
+    "productPhoto": "",
+    "buyerId": "1788123272609",
+    "buyerUsername": "userB_1788123272308",
+    "sellerId": "1788123272510",
+    "sellerUsername": "userA_1788123272308",
+    "messages": [
+      {
+        "id": "msg_1788123272786",
+        "senderId": "1788123272609",
+        "senderUsername": "userB_1788123272308",
+        "text": "Hi User A! Can we meet at the PICT Canteen today at 4 PM to test and exchange?",
+        "timestamp": "2026-08-30T20:54:32.786Z"
+      },
+      {
+        "id": "msg_1788123272831_ac5y",
+        "senderId": "1788123272510",
+        "senderUsername": "userA_1788123272308",
+        "text": "Yes, 4 PM near Table 5 works for me!",
+        "timestamp": "2026-08-30T20:54:32.831Z"
+      }
+    ],
+    "createdAt": "2026-08-30T20:54:32.783Z",
+    "lastMessageAt": "2026-08-30T20:54:32.831Z"
+  }
+]
