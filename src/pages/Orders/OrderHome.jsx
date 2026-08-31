@@ -23,14 +23,17 @@ const OrderHome = () => {
     // Modals
     const [showSellModal, setShowSellModal] = useState(false);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
-    const [showBuyModal, setShowBuyModal] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
 
-    // Buy action state
-    const [buyerContact, setBuyerContact] = useState('');
-    const [isBuying, setIsBuying] = useState(false);
+    // Request action state
     const [buyError, setBuyError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
+
+    // Request to Buy state
+    const [showRequestModal, setShowRequestModal] = useState(false);
+    const [requestNote, setRequestNote] = useState('');
+    const [isRequesting, setIsRequesting] = useState(false);
+    const [requestSuccessData, setRequestSuccessData] = useState(null);
 
     // Form state for Sell Modal
     const [formData, setFormData] = useState({
@@ -173,55 +176,62 @@ const OrderHome = () => {
         }
     };
 
-    // Handle Buy Now flow
-    const handleInitiateBuy = (product, e) => {
+    // Handle Request to Buy flow (generates Request ID & notifies seller with Accept, Reject, Chat options)
+    const handleInitiateBuyRequest = (product, e) => {
         if (e) e.stopPropagation();
         if (!token) {
-            alert('Please log in first to purchase items.');
+            alert('Please log in first to request items.');
             navigate('/login');
             return;
         }
 
         if (user && (product.sellerId === user.id || product.sellerUsername === user.username)) {
-            alert('You cannot buy your own listed item!');
+            alert('You cannot request your own listed item!');
             return;
         }
 
         setSelectedProduct(product);
         setBuyError('');
+        setRequestNote(`Hi @${product.sellerUsername || 'seller'}, I'm interested in buying your "${product.name}" for ₹${product.price}. Let's coordinate!`);
         setShowDetailsModal(false);
-        setShowBuyModal(true);
+        setShowRequestModal(true);
     };
 
-    const handleConfirmPurchase = async () => {
+    const handleConfirmBuyRequest = async () => {
         if (!selectedProduct) return;
-        setIsBuying(true);
+        setIsRequesting(true);
         setBuyError('');
 
         try {
-            const response = await fetch(`/api/products/${selectedProduct.id}/buy`, {
+            const response = await fetch(`/api/products/${selectedProduct.id}/buy-request`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ contact: buyerContact })
+                body: JSON.stringify({ message: requestNote })
             });
 
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || 'Failed to purchase product');
+                throw new Error(data.message || 'Failed to send purchase request');
             }
 
-            setShowBuyModal(false);
-            setSuccessMessage(`🎉 Success! You have bought "${selectedProduct.name}". Your activity and orders have been updated!`);
-            setTimeout(() => setSuccessMessage(''), 6000);
+            setRequestSuccessData({
+                requestId: data.requestId,
+                chatId: data.chatId,
+                productName: selectedProduct.name,
+                sellerUsername: selectedProduct.sellerUsername
+            });
+            setShowRequestModal(false);
+            setSuccessMessage(`🎉 Buy Request #${data.requestId} sent to @${selectedProduct.sellerUsername}! The seller has received options to Accept, Reject, or Chat.`);
+            setTimeout(() => setSuccessMessage(''), 8000);
             fetchProducts();
         } catch (err) {
-            setBuyError(err.message || 'Could not complete purchase.');
+            setBuyError(err.message || 'Could not send request.');
         } finally {
-            setIsBuying(false);
+            setIsRequesting(false);
         }
     };
 
@@ -449,7 +459,7 @@ const OrderHome = () => {
                                                     <span className="meta-item">👤 @{product.sellerUsername || product.seller || 'Student'}</span>
                                                 </div>
 
-                                                <div className="card-actions">
+                                                 <div className="card-actions">
                                                     {isMine ? (
                                                         <button
                                                             className="card-view-btn"
@@ -463,9 +473,10 @@ const OrderHome = () => {
                                                     ) : (
                                                         <button
                                                             className="card-buy-btn"
-                                                            onClick={(e) => handleInitiateBuy(product, e)}
+                                                            style={{ background: 'linear-gradient(135deg, #6366f1, #4f46e5)' }}
+                                                            onClick={(e) => handleInitiateBuyRequest(product, e)}
                                                         >
-                                                            ⚡ Buy Now
+                                                            📩 Request to Buy
                                                         </button>
                                                     )}
                                                 </div>
@@ -614,9 +625,10 @@ const OrderHome = () => {
                                     ) : (
                                         <button
                                             className="modal-buy-btn"
-                                            onClick={() => handleInitiateBuy(selectedProduct)}
+                                            style={{ background: 'linear-gradient(135deg, #6366f1, #4f46e5)' }}
+                                            onClick={() => handleInitiateBuyRequest(selectedProduct)}
                                         >
-                                            ⚡ Buy This Item Now
+                                            📩 Send Buy Request
                                         </button>
                                     )}
                                     <a
@@ -632,14 +644,14 @@ const OrderHome = () => {
                 </div>
             )}
 
-            {/* CONFIRM BUY MODAL */}
-            {showBuyModal && selectedProduct && (
-                <div className="modal-backdrop" onClick={() => setShowBuyModal(false)}>
+            {/* REQUEST TO BUY MODAL */}
+            {showRequestModal && selectedProduct && (
+                <div className="modal-backdrop" onClick={() => setShowRequestModal(false)}>
                     <div className="modal-content buy-confirm-modal" onClick={e => e.stopPropagation()}>
-                        <button className="modal-close" onClick={() => setShowBuyModal(false)}>×</button>
-                        <h2>🛒 Confirm Your Purchase</h2>
+                        <button className="modal-close" onClick={() => setShowRequestModal(false)}>×</button>
+                        <h2>📩 Request to Buy Item</h2>
                         <p className="buy-modal-subtitle">
-                            You are purchasing <strong>{selectedProduct.name}</strong> from @{selectedProduct.sellerUsername || selectedProduct.seller}.
+                            Send a purchase request for <strong>{selectedProduct.name}</strong> to @{selectedProduct.sellerUsername || selectedProduct.seller}. A unique Request ID will be created and the seller can Accept, Reject, or Chat with you!
                         </p>
 
                         <div className="buy-summary-card">
@@ -650,35 +662,83 @@ const OrderHome = () => {
                             />
                             <div className="buy-summary-info">
                                 <h3>{selectedProduct.name}</h3>
-                                <div className="buy-summary-price">Total: ₹{selectedProduct.price}</div>
-                                <div className="buy-summary-seller">Seller Contact: {selectedProduct.contact}</div>
+                                <div className="buy-summary-price">Offered Price: ₹{selectedProduct.price}</div>
+                                <div className="buy-summary-seller">Seller: @{selectedProduct.sellerUsername || selectedProduct.seller}</div>
                             </div>
                         </div>
 
                         {buyError && <div className="form-error">{buyError}</div>}
 
                         <div className="form-group" style={{ marginTop: '16px' }}>
-                            <label>Your Contact Number (for seller coordination)</label>
-                            <input
-                                type="text"
-                                placeholder="e.g. 9876543210"
-                                value={buyerContact}
-                                onChange={(e) => setBuyerContact(e.target.value)}
+                            <label>Personal Message / Meeting Request (optional)</label>
+                            <textarea
+                                rows="3"
+                                value={requestNote}
+                                onChange={(e) => setRequestNote(e.target.value)}
+                                placeholder="e.g. Can we meet near library after 4 PM?"
+                                style={{ width: '100%', padding: '10px 14px', borderRadius: '12px', border: '1px solid #cbd5e1' }}
                             />
                         </div>
 
                         <div className="form-actions" style={{ marginTop: '20px' }}>
-                            <button type="button" className="cancel-btn" onClick={() => setShowBuyModal(false)}>
+                            <button type="button" className="cancel-btn" onClick={() => setShowRequestModal(false)}>
                                 Cancel
                             </button>
                             <button
                                 type="button"
-                                className="submit-btn buy-confirm-btn"
-                                onClick={handleConfirmPurchase}
-                                disabled={isBuying}
+                                className="submit-btn"
+                                style={{ background: 'linear-gradient(135deg, #6366f1, #4f46e5)' }}
+                                onClick={handleConfirmBuyRequest}
+                                disabled={isRequesting}
                             >
-                                {isBuying ? 'Processing Purchase...' : `Confirm & Buy (₹${selectedProduct.price})`}
+                                {isRequesting ? 'Sending Request...' : '📩 Send Purchase Request'}
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* REQUEST SUCCESS BANNER / MODAL */}
+            {requestSuccessData && (
+                <div className="modal-backdrop" onClick={() => setRequestSuccessData(null)}>
+                    <div className="modal-content buy-confirm-modal" onClick={e => e.stopPropagation()}>
+                        <button className="modal-close" onClick={() => setRequestSuccessData(null)}>×</button>
+                        <div style={{ textAlign: 'center', padding: '10px 0' }}>
+                            <div style={{ fontSize: '3rem', marginBottom: '10px' }}>🎉</div>
+                            <h2 style={{ color: '#1a4a55', marginBottom: '8px' }}>Purchase Request Sent!</h2>
+                            <div style={{
+                                display: 'inline-block',
+                                background: '#e0e7ff',
+                                color: '#3730a3',
+                                padding: '6px 14px',
+                                borderRadius: '20px',
+                                fontWeight: '800',
+                                fontSize: '1rem',
+                                marginBottom: '14px'
+                            }}>
+                                Request ID: #{requestSuccessData.requestId}
+                            </div>
+                            <p style={{ color: '#475569', fontSize: '0.95rem', lineHeight: '1.5', marginBottom: '20px' }}>
+                                Your request has been sent to <strong>@{requestSuccessData.sellerUsername}</strong>. The owner has been notified and can <strong>Accept</strong>, <strong>Reject</strong>, or <strong>Chat</strong> with you.
+                            </p>
+                            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                                <button
+                                    className="submit-btn"
+                                    style={{ background: '#4f46e5' }}
+                                    onClick={() => {
+                                        setRequestSuccessData(null);
+                                        navigate('/profile');
+                                    }}
+                                >
+                                    💬 Open Chat &amp; Notifications
+                                </button>
+                                <button
+                                    className="cancel-btn"
+                                    onClick={() => setRequestSuccessData(null)}
+                                >
+                                    Close
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

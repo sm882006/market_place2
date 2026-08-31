@@ -159,5 +159,40 @@
     "email": "userC_1788123272308@pict.edu",
     "password": "$2b$10$fKLdCQPZD4BZJVJv2qw0aeLlxtauVhWAO0um.97vGCaZYBO.ViBr.",
     "createdAt": "2026-08-30T20:54:32.750Z"
+  },
+  {
+    "id": "1788208584561",
+    "username": "seller_1788208584311",
+    "email": "seller_1788208584311@pict.edu",
+    "password": "$2b$10$TG4WkrTBkPYMqoMshmss0.hOZQTkJ.iXEK3ZnIXb8Pp5mF05H50dK",
+    "createdAt": "2026-08-31T20:36:24.561Z"
+  },
+  {
+    "id": "1788208584722",
+    "username": "buyer_1788208584311",
+    "email": "buyer_1788208584311@pict.edu",
+    "password": "$2b$10$oPcemcXPUrfkN2.WAp82C.KHH.8ONh2e1sTspm4bv4EwLRU4L1MJi",
+    "createdAt": "2026-08-31T20:36:24.722Z"
+  },
+  {
+    "id": "1788208589485",
+    "username": "userA_1788208589241",
+    "email": "userA_1788208589241@pict.edu",
+    "password": "$2b$10$kwWJuPXYu.aiiHTIaN2B5OghxIqH9PmjNRN.xFAwRglR0jLDXkGzW",
+    "createdAt": "2026-08-31T20:36:29.485Z"
+  },
+  {
+    "id": "1788208589631",
+    "username": "userB_1788208589241",
+    "email": "userB_1788208589241@pict.edu",
+    "password": "$2b$10$VRE.1mcl3IDLh5meJb6DvOVy04tkfLltaT0k7ddoVJjTTK4/oWCp2",
+    "createdAt": "2026-08-31T20:36:29.631Z"
+  },
+  {
+    "id": "1788208589781",
+    "username": "userC_1788208589241",
+    "email": "userC_1788208589241@pict.edu",
+    "password": "$2b$10$k5JCXWQYEumwuQdTUR6wP.yUOvNVKGsc.eRJUuAFKTW0EdARgMZMS",
+    "createdAt": "2026-08-31T20:36:29.781Z"
   }
 ]

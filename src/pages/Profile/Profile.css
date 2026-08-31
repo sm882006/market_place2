@@ -843,13 +843,72 @@
     margin-bottom: 8px;
 }
 
+.notif-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.notif-request-id-badge {
+    background: #e0e7ff;
+    color: #3730a3;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #c7d2fe;
+    letter-spacing: 0.3px;
+}
+
 .notif-type-tag {
     font-size: 0.78rem;
     font-weight: 700;
-    color: #4f46e5;
-    background: rgba(99, 102, 241, 0.1);
     padding: 2px 8px;
     border-radius: 6px;
+}
+
+.notif-type-tag.tag-buy {
+    color: #4f46e5;
+    background: rgba(99, 102, 241, 0.12);
+}
+
+.notif-type-tag.tag-rent {
+    color: #0d9488;
+    background: rgba(13, 148, 136, 0.12);
+}
+
+.notif-type-tag.tag-approved {
+    color: #059669;
+    background: rgba(16, 185, 129, 0.12);
+}
+
+.notif-type-tag.tag-rejected {
+    color: #dc2626;
+    background: rgba(239, 68, 68, 0.12);
+}
+
+.notif-type-tag.tag-chat {
+    color: #2563eb;
+    background: rgba(37, 99, 235, 0.12);
+}
+
+.profile-notif-card.notif-approved {
+    border-left: 4px solid #10b981;
+    background: rgba(236, 253, 245, 0.7);
+}
+
+.profile-notif-card.notif-rejected {
+    border-left: 4px solid #ef4444;
+    background: rgba(254, 242, 242, 0.7);
+}
+
+.request-actions-bar {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(0, 0, 0, 0.08);
 }
 
 .notif-time-tag {
@@ -1161,4 +1220,4 @@
     .empty-actions {
         flex-direction: column;
     }
-}
+}

@@ -40,5 +40,27 @@
     "rentedAt": "2026-08-30T20:54:25.448Z",
     "pendingRenterId": null,
     "pendingRenterUsername": null
+  },
+  {
+    "id": "rent_1788208584836",
+    "name": "Scientific Calculator fx-991ES",
+    "category": "Electronics & Gadgets",
+    "rentPerDay": 50,
+    "deposit": 200,
+    "availableFrom": "2026-08-31",
+    "availableTill": "",
+    "condition": "Good",
+    "description": "",
+    "contact": "9511931794",
+    "photo": "",
+    "ownerId": "1788208584561",
+    "ownerUsername": "seller_1788208584311",
+    "status": "rented",
+    "renterId": "1788208584722",
+    "renterUsername": "buyer_1788208584311",
+    "createdAt": "2026-08-31T20:36:24.836Z",
+    "rentedAt": "2026-08-31T20:36:24.853Z",
+    "pendingRenterId": null,
+    "pendingRenterUsername": null
   }
 ]

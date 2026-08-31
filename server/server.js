@@ -10,8 +10,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-const PORT = 5001;
-const JWT_SECRET = 'market_pict_secret_key_2026';
+const PORT = process.env.PORT || 5001;
+const JWT_SECRET = process.env.JWT_SECRET || 'market_pict_secret_key_2026';
 
 // Storage file paths
 const USERS_FILE = join(__dirname, 'users.json');
@@ -99,11 +99,12 @@ function authMiddleware(req, res, next) {
 }
 
 // Helper: create a private notification for a specific user
-function createNotification({ userId, fromUserId, fromUsername, type, productId, rentId, productName, message }) {
+function createNotification({ userId, fromUserId, fromUsername, type, productId, rentId, productName, message, requestId, price, days }) {
   if (!userId) return null;
   const notifications = getNotifications();
   const notif = {
     id: 'notif_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+    requestId: requestId || ('REQ-' + Math.floor(1000 + Math.random() * 9000)),
     userId,
     fromUserId,
     fromUsername,
@@ -111,6 +112,8 @@ function createNotification({ userId, fromUserId, fromUsername, type, productId,
     productId: productId || null,
     rentId: rentId || null,
     productName: productName || '',
+    price: price || null,
+    days: days || null,
     message,
     isRead: false,
     createdAt: new Date().toISOString(),
@@ -413,10 +416,13 @@ app.post('/api/products/:id/buy-request', authMiddleware, (req, res) => {
       return res.status(400).json({ message: 'Another buyer has already sent a request for this item. Please check back later.' });
     }
 
+    const requestId = 'REQ-BUY-' + Math.floor(1000 + Math.random() * 9000);
+
     // Set product to pending state
     product.status = 'pending';
     product.pendingBuyerId = buyerId;
     product.pendingBuyerUsername = buyerUsername;
+    product.requestId = requestId;
     products[productIndex] = product;
     saveProducts(products);
 
@@ -442,7 +448,7 @@ app.post('/api/products/:id/buy-request', authMiddleware, (req, res) => {
       saveChats(chats);
     }
 
-    const autoMsg = buyerMsg || `Hi! I want to buy your "${product.name}" for ₹${product.price}. Is it available to meet on campus?`;
+    const autoMsg = buyerMsg || `Hi @${product.sellerUsername || 'Seller'}! I sent a purchase request (#${requestId}) for "${product.name}" for ₹${product.price}. Is it available to meet on campus?`;
     const chatIndex = chats.findIndex(c => c.id === chat.id);
     chats[chatIndex].messages.push({
       id: 'msg_' + Date.now(),
@@ -454,19 +460,22 @@ app.post('/api/products/:id/buy-request', authMiddleware, (req, res) => {
     chats[chatIndex].lastMessageAt = new Date().toISOString();
     saveChats(chats);
 
-    // Notify seller privately
+    // Notify seller privately with 3 options: Accept, Reject, Chat
     createNotification({
       userId: product.sellerId,
       fromUserId: buyerId,
       fromUsername: buyerUsername,
       type: 'buy_request',
+      requestId,
       productId: id,
       productName: product.name,
-      message: `@${buyerUsername} requested to buy your "${product.name}" for ₹${product.price}. Chat to coordinate and approve the sale.`,
+      price: product.price,
+      message: `@${buyerUsername} requested to buy your "${product.name}" for ₹${product.price} (Request ID: #${requestId}). You can Accept, Reject, or Chat.`,
     });
 
     res.json({
-      message: 'Purchase request sent! The seller has been notified.',
+      message: `Purchase request #${requestId} sent! The seller has received your notification.`,
+      requestId,
       chatId: chat.id,
       product,
     });
@@ -500,6 +509,7 @@ app.post('/api/products/:id/approve-sale', authMiddleware, (req, res) => {
 
     const approvedBuyerId = product.pendingBuyerId;
     const approvedBuyerUsername = product.pendingBuyerUsername;
+    const currentRequestId = product.requestId || ('REQ-BUY-' + Math.floor(1000 + Math.random() * 9000));
 
     product.status = 'sold';
     product.buyerId = approvedBuyerId;
@@ -531,18 +541,21 @@ app.post('/api/products/:id/approve-sale', authMiddleware, (req, res) => {
     orders.push(newOrder);
     saveOrders(orders);
 
+    // Notify buyer that request was accepted
     createNotification({
       userId: approvedBuyerId,
       fromUserId: product.sellerId,
       fromUsername: product.sellerUsername,
       type: 'sale_approved',
+      requestId: currentRequestId,
       productId: id,
       productName: product.name,
-      message: `🎉 @${product.sellerUsername} approved your purchase! "${product.name}" is now marked as sold to you.`,
+      price: product.price,
+      message: `🎉 Great news! @${product.sellerUsername} ACCEPTED your buy request (#${currentRequestId}) for "${product.name}". The item is successfully bought by you!`,
     });
 
     res.json({
-      message: 'Sale approved! The product is now marked as Sold.',
+      message: 'Sale approved! The product is now marked as Sold and the buyer has been notified.',
       product,
       order: newOrder,
     });
@@ -571,10 +584,12 @@ app.post('/api/products/:id/reject-sale', authMiddleware, (req, res) => {
     }
 
     const rejectedBuyerId = product.pendingBuyerId;
+    const currentRequestId = product.requestId || ('REQ-BUY-' + Math.floor(1000 + Math.random() * 9000));
 
     product.status = 'available';
     product.pendingBuyerId = null;
     product.pendingBuyerUsername = null;
+    product.requestId = null;
     products[productIndex] = product;
     saveProducts(products);
 
@@ -584,13 +599,14 @@ app.post('/api/products/:id/reject-sale', authMiddleware, (req, res) => {
         fromUserId: product.sellerId,
         fromUsername: product.sellerUsername,
         type: 'sale_rejected',
+        requestId: currentRequestId,
         productId: id,
         productName: product.name,
-        message: `Sorry, @${product.sellerUsername} declined your request for "${product.name}". The item is available for other buyers.`,
+        message: `⚠️ Notice: @${product.sellerUsername} REJECTED your buy request (#${currentRequestId}) for "${product.name}". The item is available again for other buyers.`,
       });
     }
 
-    res.json({ message: 'Request declined. Product is available again.' });
+    res.json({ message: 'Request rejected. Product is available again and the buyer has been notified.' });
   } catch (error) {
     res.status(500).json({ message: 'Failed to decline request.' });
   }
@@ -792,13 +808,17 @@ app.post('/api/rents/:id/rent-request', authMiddleware, (req, res) => {
       return res.status(400).json({ message: 'This item is currently rented out.' });
     }
     if (item.status === 'pending') {
-      return res.status(400).json({ message: 'Another student has already sent a request for this rental.' });
+      return res.status(400).json({ message: 'Another student has already sent a request for this rental. Please check back later.' });
     }
+
+    const requestId = 'REQ-RENT-' + Math.floor(1000 + Math.random() * 9000);
+    const parsedDays = parseInt(days, 10) || 1;
 
     item.status = 'pending';
     item.pendingRenterId = renterId;
     item.pendingRenterUsername = renterUsername;
-    item.pendingDays = parseInt(days, 10) || 1;
+    item.pendingDays = parsedDays;
+    item.requestId = requestId;
     rents[rentIndex] = item;
     saveRents(rents);
 
@@ -823,7 +843,7 @@ app.post('/api/rents/:id/rent-request', authMiddleware, (req, res) => {
       saveChats(chats);
     }
 
-    const autoMsg = renterMsg || `Hi! I would like to rent your "${item.name}" for ${days} day(s). When and where can we meet?`;
+    const autoMsg = renterMsg || `Hi @${item.ownerUsername || 'Owner'}! I sent a rental request (#${requestId}) for "${item.name}" for ${parsedDays} day(s). When and where can we meet on campus?`;
     const chatIndex = chats.findIndex(c => c.id === chat.id);
     chats[chatIndex].messages.push({
       id: 'msg_' + Date.now(),
@@ -835,17 +855,21 @@ app.post('/api/rents/:id/rent-request', authMiddleware, (req, res) => {
     chats[chatIndex].lastMessageAt = new Date().toISOString();
     saveChats(chats);
 
+    // Notify owner privately with 3 options: Accept, Reject, Chat
     createNotification({
       userId: item.ownerId,
       fromUserId: renterId,
       fromUsername: renterUsername,
       type: 'rent_request',
+      requestId,
       rentId: id,
       productName: item.name,
-      message: `@${renterUsername} requested to rent your "${item.name}" for ${days} day(s). Chat to coordinate and approve.`,
+      price: item.rentPerDay,
+      days: parsedDays,
+      message: `@${renterUsername} requested to rent your "${item.name}" for ${parsedDays} day(s) (Request ID: #${requestId}). You can Accept, Reject, or Chat.`,
     });
 
-    res.json({ message: 'Rent request sent! The owner will be notified.', chatId: chat.id, item });
+    res.json({ message: `Rent request #${requestId} sent! The owner has received your notification.`, requestId, chatId: chat.id, item });
   } catch (error) {
     res.status(500).json({ message: 'Failed to send rent request.' });
   }
@@ -876,6 +900,7 @@ app.post('/api/rents/:id/approve-rent', authMiddleware, (req, res) => {
 
     const approvedRenterId = item.pendingRenterId;
     const approvedRenterUsername = item.pendingRenterUsername;
+    const currentRequestId = item.requestId || ('REQ-RENT-' + Math.floor(1000 + Math.random() * 9000));
 
     item.status = 'rented';
     item.renterId = approvedRenterId;
@@ -911,17 +936,21 @@ app.post('/api/rents/:id/approve-rent', authMiddleware, (req, res) => {
     orders.push(newOrder);
     saveOrders(orders);
 
+    // Notify renter that request was accepted
     createNotification({
       userId: approvedRenterId,
       fromUserId: item.ownerId,
       fromUsername: item.ownerUsername,
       type: 'rent_approved',
+      requestId: currentRequestId,
       rentId: id,
       productName: item.name,
-      message: `🎉 @${item.ownerUsername} approved your rent request for "${item.name}"!`,
+      days,
+      price: item.rentPerDay,
+      message: `🎉 Great news! @${item.ownerUsername} ACCEPTED your rent request (#${currentRequestId}) for "${item.name}" for ${days} day(s)! Your rental is confirmed.`,
     });
 
-    res.json({ message: 'Rent approved! The item is marked as Rented.', item, order: newOrder });
+    res.json({ message: 'Rent approved! The item is marked as Rented and the renter has been notified.', item, order: newOrder });
   } catch (error) {
     res.status(500).json({ message: 'Failed to approve rent.' });
   }
@@ -945,10 +974,13 @@ app.post('/api/rents/:id/reject-rent', authMiddleware, (req, res) => {
     }
 
     const rejectedRenterId = item.pendingRenterId;
+    const currentRequestId = item.requestId || ('REQ-RENT-' + Math.floor(1000 + Math.random() * 9000));
+
     item.status = 'available';
     item.pendingRenterId = null;
     item.pendingRenterUsername = null;
     item.pendingDays = null;
+    item.requestId = null;
     rents[rentIndex] = item;
     saveRents(rents);
 
@@ -958,13 +990,14 @@ app.post('/api/rents/:id/reject-rent', authMiddleware, (req, res) => {
         fromUserId: item.ownerId,
         fromUsername: item.ownerUsername,
         type: 'rent_rejected',
+        requestId: currentRequestId,
         rentId: id,
         productName: item.name,
-        message: `Sorry, @${item.ownerUsername} declined your rent request for "${item.name}". The item is available again.`,
+        message: `⚠️ Notice: @${item.ownerUsername} REJECTED your rent request (#${currentRequestId}) for "${item.name}". The item is available again for other users.`,
       });
     }
 
-    res.json({ message: 'Request declined. Rental is back to available.' });
+    res.json({ message: 'Rent request declined. Rental is back to available and the user has been notified.' });
   } catch (error) {
     res.status(500).json({ message: 'Failed to decline rent request.' });
   }
@@ -1442,7 +1475,21 @@ app.get('/api/user/activity', authMiddleware, (req, res) => {
   }
 });
 
-// Start server
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', time: new Date().toISOString() });
+});
+
+// Serve frontend static build if present (for production)
+const distPath = join(process.cwd(), 'dist');
+if (existsSync(distPath)) {
+  app.use(express.static(distPath));
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(join(distPath, 'index.html'));
+  });
+}
+
 app.listen(PORT, () => {
   console.log(`✅ Backend server running on http://localhost:${PORT}`);
 });

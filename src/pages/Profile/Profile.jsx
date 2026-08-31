@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import './Profile.css';
 
-const API = 'http://localhost:5001';
+const API = '';
 
 const Profile = () => {
     const { user, token, logout, isAuthenticated, loading } = useAuth();
@@ -166,10 +166,41 @@ const Profile = () => {
         }
     };
 
+    // Helper to open chat associated with notification or activity
+    const handleOpenChatForNotifOrActivity = async (item) => {
+        setActiveSection('messages');
+        const targetProdId = item.productId || item.rawId;
+        const targetRentId = item.rentId || item.rawId;
+        
+        let match = chats.find(c => (targetProdId && c.productId === targetProdId) || (targetRentId && c.rentId === targetRentId));
+        
+        if (!match && token) {
+            try {
+                const res = await fetch(`${API}/api/chats`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const freshChats = await res.json();
+                    setChats(freshChats || []);
+                    match = (freshChats || []).find(c => (targetProdId && c.productId === targetProdId) || (targetRentId && c.rentId === targetRentId));
+                    if (!match && freshChats.length > 0) match = freshChats[0];
+                }
+            } catch (err) {
+                console.error('Error refreshing chats:', err);
+            }
+        }
+        
+        if (match) {
+            selectChat(match);
+        }
+    };
+
     // Seller approves sale directly
     const handleApproveSale = async (actOrChat) => {
-        const prodId = actOrChat.rawId || actOrChat.productId || actOrChat.id;
-        const endpoint = actOrChat.approveEndpoint || `/api/products/${prodId}/approve-sale`;
+        const prodId = actOrChat.rawId || actOrChat.productId || actOrChat.rentId || actOrChat.id;
+        const isRent = actOrChat.isRent || actOrChat.type === 'rent_request' || actOrChat.type === 'rent_listing' || actOrChat.rentId;
+        const defaultEndpoint = isRent ? `/api/rents/${prodId}/approve-rent` : `/api/products/${prodId}/approve-sale`;
+        const endpoint = actOrChat.approveEndpoint || defaultEndpoint;
         setProcessingId(prodId);
 
         try {
@@ -179,13 +210,13 @@ const Profile = () => {
             });
             const data = await res.json();
             if (res.ok) {
-                setActionMsg(`✅ Success! You approved the sale. Product is marked as Sold.`);
+                setActionMsg(isRent ? `✅ Success! You approved the rental request.` : `✅ Success! You approved the sale. Product marked as Sold.`);
                 setTimeout(() => setActionMsg(''), 5000);
                 loadUserActivity();
                 loadNotifications();
                 loadChats();
             } else {
-                alert(data.message || 'Failed to approve sale.');
+                alert(data.message || 'Failed to approve request.');
             }
         } catch (err) {
             alert('Network error while approving.');
@@ -196,9 +227,12 @@ const Profile = () => {
 
     // Seller declines request
     const handleDeclineRequest = async (actOrChat) => {
-        const prodId = actOrChat.rawId || actOrChat.productId || actOrChat.id;
-        const endpoint = actOrChat.rejectEndpoint || `/api/products/${prodId}/reject-sale`;
-        if (!window.confirm('Decline this purchase request? The product will remain available.')) return;
+        const prodId = actOrChat.rawId || actOrChat.productId || actOrChat.rentId || actOrChat.id;
+        const isRent = actOrChat.isRent || actOrChat.type === 'rent_request' || actOrChat.type === 'rent_listing' || actOrChat.rentId;
+        const defaultEndpoint = isRent ? `/api/rents/${prodId}/reject-rent` : `/api/products/${prodId}/reject-sale`;
+        const endpoint = actOrChat.rejectEndpoint || defaultEndpoint;
+        
+        if (!window.confirm(isRent ? 'Decline this rental request? Item will remain available.' : 'Decline this purchase request? The product will remain available.')) return;
         setProcessingId(prodId);
 
         try {
@@ -208,7 +242,7 @@ const Profile = () => {
             });
             const data = await res.json();
             if (res.ok) {
-                setActionMsg(`Request declined. Product is back to available.`);
+                setActionMsg(isRent ? `Rental request declined. Item remains available.` : `Purchase request declined. Product remains available.`);
                 setTimeout(() => setActionMsg(''), 4000);
                 loadUserActivity();
                 loadNotifications();
@@ -591,52 +625,93 @@ const Profile = () => {
                             </div>
                         ) : (
                             <div className="profile-notif-list">
-                                {notifications.map((notif) => (
-                                    <div
-                                        key={notif.id}
-                                        className={`profile-notif-card ${!notif.isRead ? 'unread' : ''}`}
-                                        onClick={() => markNotifRead(notif.id)}
-                                    >
-                                        <div className="notif-card-header">
-                                            <span className="notif-type-tag">
-                                                {notif.type.includes('request') ? '📩 Request' : notif.type.includes('approved') ? '🎉 Approved' : '💬 Message'}
-                                            </span>
-                                            <span className="notif-time-tag">
-                                                {new Date(notif.createdAt).toLocaleString()}
-                                            </span>
-                                        </div>
+                                {notifications.map((notif) => {
+                                    const isBuyRequest = notif.type === 'buy_request';
+                                    const isRentRequest = notif.type === 'rent_request';
+                                    const isApproved = notif.type.includes('approved');
+                                    const isRejected = notif.type.includes('rejected');
+                                    const isChat = notif.type === 'chat_message';
 
-                                        <p className="notif-card-message">{notif.message}</p>
-
-                                        {/* Quick Actions inside Notification */}
-                                        {(notif.type === 'buy_request' || notif.type === 'rent_request') && (
-                                            <div className="notif-quick-actions" onClick={(e) => e.stopPropagation()}>
-                                                <button
-                                                    className="approve-btn small"
-                                                    onClick={() => handleApproveSale({ rawId: notif.productId || notif.rentId, approveEndpoint: notif.type === 'buy_request' ? `/api/products/${notif.productId}/approve-sale` : `/api/rents/${notif.rentId}/approve-rent` })}
-                                                >
-                                                    ✅ Approve
-                                                </button>
-                                                <button
-                                                    className="decline-btn small"
-                                                    onClick={() => handleDeclineRequest({ rawId: notif.productId || notif.rentId, rejectEndpoint: notif.type === 'buy_request' ? `/api/products/${notif.productId}/reject-sale` : `/api/rents/${notif.rentId}/reject-rent` })}
-                                                >
-                                                    ❌ Decline
-                                                </button>
-                                                <button
-                                                    className="chat-action-btn small"
-                                                    onClick={() => {
-                                                        const matchChat = chats.find((c) => c.productId === notif.productId || c.rentId === notif.rentId);
-                                                        if (matchChat) selectChat(matchChat);
-                                                        else setActiveSection('messages');
-                                                    }}
-                                                >
-                                                    💬 Chat
-                                                </button>
+                                    return (
+                                        <div
+                                            key={notif.id}
+                                            className={`profile-notif-card ${!notif.isRead ? 'unread' : ''} ${isApproved ? 'notif-approved' : ''} ${isRejected ? 'notif-rejected' : ''}`}
+                                            onClick={() => markNotifRead(notif.id)}
+                                        >
+                                            <div className="notif-card-header">
+                                                <div className="notif-header-left">
+                                                    <span className={`notif-type-tag ${isBuyRequest ? 'tag-buy' : isRentRequest ? 'tag-rent' : isApproved ? 'tag-approved' : isRejected ? 'tag-rejected' : 'tag-chat'}`}>
+                                                        {isBuyRequest ? '📩 Buy Request' : isRentRequest ? '🔑 Rent Request' : isApproved ? '🎉 Request Accepted' : isRejected ? '⚠️ Request Rejected' : '💬 Private Message'}
+                                                    </span>
+                                                    {notif.requestId && (
+                                                        <span className="notif-request-id-badge" title="Unique Request Identifier">
+                                                            ID: #{notif.requestId}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <span className="notif-time-tag">
+                                                    {new Date(notif.createdAt).toLocaleString()}
+                                                </span>
                                             </div>
-                                        )}
-                                    </div>
-                                ))}
+
+                                            <p className="notif-card-message">{notif.message}</p>
+
+                                            {/* 3 OPTIONS FOR OWNER ON REQUESTS: ACCEPT, REJECT, CHAT */}
+                                            {(isBuyRequest || isRentRequest) && (
+                                                <div className="notif-quick-actions request-actions-bar" onClick={(e) => e.stopPropagation()}>
+                                                    <button
+                                                        className="approve-btn"
+                                                        disabled={processingId === (notif.productId || notif.rentId)}
+                                                        onClick={() => handleApproveSale({
+                                                            rawId: notif.productId || notif.rentId,
+                                                            isRent: isRentRequest,
+                                                            approveEndpoint: isBuyRequest ? `/api/products/${notif.productId}/approve-sale` : `/api/rents/${notif.rentId}/approve-rent`
+                                                        })}
+                                                    >
+                                                        ✅ Accept
+                                                    </button>
+                                                    <button
+                                                        className="decline-btn"
+                                                        disabled={processingId === (notif.productId || notif.rentId)}
+                                                        onClick={() => handleDeclineRequest({
+                                                            rawId: notif.productId || notif.rentId,
+                                                            isRent: isRentRequest,
+                                                            rejectEndpoint: isBuyRequest ? `/api/products/${notif.productId}/reject-sale` : `/api/rents/${notif.rentId}/reject-rent`
+                                                        })}
+                                                    >
+                                                        ❌ Reject
+                                                    </button>
+                                                    <button
+                                                        className="chat-action-btn"
+                                                        onClick={() => handleOpenChatForNotifOrActivity(notif)}
+                                                    >
+                                                        💬 Chat
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {/* Quick Actions for Approvals / Messages */}
+                                            {!isBuyRequest && !isRentRequest && (
+                                                <div className="notif-quick-actions" onClick={(e) => e.stopPropagation()}>
+                                                    <button
+                                                        className="chat-action-btn small"
+                                                        onClick={() => handleOpenChatForNotifOrActivity(notif)}
+                                                    >
+                                                        💬 Open Chat
+                                                    </button>
+                                                    {isApproved && (
+                                                        <button
+                                                            className="approve-btn small"
+                                                            onClick={() => navigate('/orders')}
+                                                        >
+                                                            📑 View In Orders
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>

@@ -1,0 +1,8 @@
+{
+  "name": "MarketPICT - Campus Marketplace",
+  "description": "A campus platform for buying, selling, renting items, and managing lost and found within the college community.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

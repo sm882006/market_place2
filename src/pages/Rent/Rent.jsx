@@ -13,9 +13,10 @@ const Rent = () => {
   const [category, setCategory] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const [rentDays, setRentDays] = useState(1);
-  const [renterContact, setRenterContact] = useState('');
-  const [isRenting, setIsRenting] = useState(false);
+  const [requestNote, setRequestNote] = useState('');
+  const [isRequesting, setIsRequesting] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [rentSuccessData, setRentSuccessData] = useState(null);
 
   const fetchRents = useCallback(async () => {
     try {
@@ -36,22 +37,23 @@ const Rent = () => {
     fetchRents();
   }, [fetchRents]);
 
-  const handleRent = async () => {
+  // Request to Rent (Generates Request ID & notifies owner with 3 options: Accept, Reject, Chat)
+  const handleRentRequest = async () => {
     if (!selectedItem) return;
     if (!token) {
-      alert('Please log in first to rent an item.');
+      alert('Please log in first to send a rental request.');
       navigate('/login');
       return;
     }
 
     if (user && (selectedItem.ownerId === user.id || selectedItem.ownerUsername === user.username)) {
-      alert('You cannot rent your own item!');
+      alert('You cannot request your own listed item!');
       return;
     }
 
     try {
-      setIsRenting(true);
-      const res = await fetch(`/api/rents/${selectedItem.id}/rent`, {
+      setIsRequesting(true);
+      const res = await fetch(`/api/rents/${selectedItem.id}/rent-request`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -59,24 +61,31 @@ const Rent = () => {
         },
         body: JSON.stringify({
           days: rentDays,
-          contact: renterContact || user?.email || ''
+          contact: user?.email || '',
+          message: requestNote || `Hi @${selectedItem.ownerUsername}, I would like to rent "${selectedItem.name}" for ${rentDays} day(s).`
         })
       });
 
       const data = await res.json();
       if (res.ok) {
-        setSuccessMsg(`🎉 Success! You have rented "${selectedItem.name}" for ${rentDays} day(s). Check your profile activity!`);
-        setTimeout(() => setSuccessMsg(''), 6000);
+        setRentSuccessData({
+          requestId: data.requestId,
+          chatId: data.chatId,
+          itemName: selectedItem.name,
+          ownerUsername: selectedItem.ownerUsername
+        });
         setSelectedItem(null);
+        setSuccessMsg(`🎉 Rental Request #${data.requestId} sent to @${selectedItem.ownerUsername}! They can Accept, Reject, or Chat.`);
+        setTimeout(() => setSuccessMsg(''), 8000);
         fetchRents();
       } else {
-        alert(data.message || 'Failed to rent item.');
+        alert(data.message || 'Failed to send rental request.');
       }
     } catch (err) {
       console.error(err);
-      alert('Network error while processing rental.');
+      alert('Network error while processing rental request.');
     } finally {
-      setIsRenting(false);
+      setIsRequesting(false);
     }
   };
 
@@ -206,9 +215,9 @@ const Rent = () => {
                         setSelectedItem(item);
                         setRentDays(1);
                       }}
-                      style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}
+                      style={{ background: 'linear-gradient(135deg, #6366f1, #4f46e5)' }}
                     >
-                      🤝 Rent Now
+                      📩 Request to Rent
                     </button>
                   )}
                 </div>
@@ -286,33 +295,48 @@ const Rent = () => {
               <div>📅 Available: {selectedItem.availableFrom} to {selectedItem.availableTill || 'Ongoing'}</div>
             </div>
 
-            {/* Rent Duration Selector */}
+            {/* Rent Duration and Message */}
             {(!user || (selectedItem.ownerId !== user.id && selectedItem.ownerUsername !== user.username)) && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-                <div>
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '4px' }}>
+                      Number of Days:
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={rentDays}
+                      onChange={(e) => setRentDays(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '4px' }}>
+                      Total Estimated Cost:
+                    </label>
+                    <div style={{ fontSize: '16px', fontWeight: '800', color: '#10b981', paddingTop: '6px' }}>
+                      ₹{(selectedItem.rentPerDay * rentDays) + (selectedItem.deposit || 0)}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '16px' }}>
                   <label style={{ fontSize: '12px', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '4px' }}>
-                    Number of Days:
+                    Note to Owner (Pickup date/time, hostel room, etc.):
                   </label>
                   <input
-                    type="number"
-                    min="1"
-                    value={rentDays}
-                    onChange={(e) => setRentDays(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                    type="text"
+                    placeholder="e.g. Need this for upcoming lab exam on Thursday"
+                    value={requestNote}
+                    onChange={(e) => setRequestNote(e.target.value)}
                     style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
                   />
                 </div>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '4px' }}>
-                    Total Estimated Cost:
-                  </label>
-                  <div style={{ fontSize: '16px', fontWeight: '800', color: '#10b981', paddingTop: '6px' }}>
-                    ₹{(selectedItem.rentPerDay * rentDays) + (selectedItem.deposit || 0)}
-                  </div>
-                </div>
-              </div>
+              </>
             )}
 
-            <div style={{ display: 'flex', gap: '12px' }}>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
               {user && (selectedItem.ownerId === user.id || selectedItem.ownerUsername === user.username) ? (
                 <button
                   style={{
@@ -339,21 +363,21 @@ const Rent = () => {
                     padding: '12px',
                     borderRadius: '12px',
                     border: 'none',
-                    background: 'linear-gradient(135deg, #10b981, #059669)',
+                    background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
                     color: '#fff',
                     fontWeight: '700',
                     cursor: 'pointer'
                   }}
-                  onClick={handleRent}
-                  disabled={isRenting}
+                  onClick={handleRentRequest}
+                  disabled={isRequesting}
                 >
-                  {isRenting ? 'Processing...' : `Confirm & Rent (₹${(selectedItem.rentPerDay * rentDays) + (selectedItem.deposit || 0)})`}
+                  {isRequesting ? 'Sending...' : `📩 Send Rent Request`}
                 </button>
               )}
               <a
                 href={`tel:${selectedItem.contact}`}
                 style={{
-                  padding: '12px 18px',
+                  padding: '12px 16px',
                   borderRadius: '12px',
                   border: '1px solid #cbd5e1',
                   background: '#f8fafc',
@@ -366,6 +390,106 @@ const Rent = () => {
               >
                 📞 Call Owner
               </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* RENT REQUEST SUCCESS MODAL */}
+      {rentSuccessData && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}
+          onClick={() => setRentSuccessData(null)}
+        >
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: '24px',
+              maxWidth: '480px',
+              width: '100%',
+              padding: '28px',
+              textAlign: 'center',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+              position: 'relative'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                border: 'none',
+                background: '#f1f5f9',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                cursor: 'pointer',
+                fontSize: '18px'
+              }}
+              onClick={() => setRentSuccessData(null)}
+            >
+              ×
+            </button>
+            <div style={{ fontSize: '3rem', marginBottom: '10px' }}>🔑</div>
+            <h2 style={{ color: '#1a4a55', marginBottom: '8px' }}>Rental Request Sent!</h2>
+            <div style={{
+              display: 'inline-block',
+              background: '#e0e7ff',
+              color: '#3730a3',
+              padding: '6px 16px',
+              borderRadius: '20px',
+              fontWeight: '800',
+              fontSize: '1.05rem',
+              marginBottom: '14px'
+            }}>
+              Request ID: #{rentSuccessData.requestId}
+            </div>
+            <p style={{ color: '#475569', fontSize: '0.95rem', lineHeight: '1.5', marginBottom: '20px' }}>
+              Your rental request for <strong>"{rentSuccessData.itemName}"</strong> has been sent to owner <strong>@{rentSuccessData.ownerUsername}</strong>. They have been given options to <strong>Accept</strong>, <strong>Reject</strong>, or <strong>Chat</strong> with you.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button
+                style={{
+                  padding: '12px 20px',
+                  background: '#4f46e5',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '12px',
+                  fontWeight: '700',
+                  cursor: 'pointer'
+                }}
+                onClick={() => {
+                  setRentSuccessData(null);
+                  navigate('/profile');
+                }}
+              >
+                💬 Open Chat &amp; Profile
+              </button>
+              <button
+                style={{
+                  padding: '12px 20px',
+                  background: '#f1f5f9',
+                  color: '#475569',
+                  border: 'none',
+                  borderRadius: '12px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+                onClick={() => setRentSuccessData(null)}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

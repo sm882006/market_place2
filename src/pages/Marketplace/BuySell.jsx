@@ -12,8 +12,10 @@ const BuySell = () => {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [buyingId, setBuyingId] = useState(null);
+  const [requestingId, setRequestingId] = useState(null);
+  const [requestNote, setRequestNote] = useState('');
   const [msg, setMsg] = useState('');
+  const [requestSuccessData, setRequestSuccessData] = useState(null);
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -34,47 +36,52 @@ const BuySell = () => {
     fetchProducts();
   }, [fetchProducts]);
 
-  const handleBuy = async (product) => {
+  // Request to Buy (generates Request ID & notifies seller with 3 options: Accept, Reject, Chat)
+  const handleBuyRequest = async (product) => {
     if (!token) {
-      alert('Please log in first to purchase items.');
+      alert('Please log in first to request items.');
       navigate('/login');
       return;
     }
 
     if (user && (product.sellerId === user.id || product.sellerUsername === user.username)) {
-      alert('You cannot buy your own listed item!');
-      return;
-    }
-
-    if (!window.confirm(`Confirm purchase of "${product.name}" for ₹${product.price}?`)) {
+      alert('You cannot request your own listed item!');
       return;
     }
 
     try {
-      setBuyingId(product.id);
-      const res = await fetch(`/api/products/${product.id}/buy`, {
+      setRequestingId(product.id);
+      const res = await fetch(`/api/products/${product.id}/buy-request`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ contact: user?.email || '' })
+        body: JSON.stringify({
+          message: requestNote || `Hi @${product.sellerUsername || 'seller'}, I'm interested in buying your "${product.name}" for ₹${product.price}.`
+        })
       });
 
       const data = await res.json();
       if (res.ok) {
-        setMsg(`🎉 Success! Purchased "${product.name}". Check your profile activity!`);
-        setTimeout(() => setMsg(''), 5000);
+        setRequestSuccessData({
+          requestId: data.requestId,
+          chatId: data.chatId,
+          productName: product.name,
+          sellerUsername: product.sellerUsername || product.seller
+        });
         setSelectedProduct(null);
+        setMsg(`🎉 Buy Request #${data.requestId} sent to @${product.sellerUsername || product.seller}! They can Accept, Reject, or Chat.`);
+        setTimeout(() => setMsg(''), 8000);
         fetchProducts();
       } else {
-        alert(data.message || 'Failed to buy product.');
+        alert(data.message || 'Failed to send buy request.');
       }
     } catch (err) {
       console.error(err);
-      alert('Network error while processing purchase.');
+      alert('Network error while processing buy request.');
     } finally {
-      setBuyingId(null);
+      setRequestingId(null);
     }
   };
 
@@ -194,11 +201,11 @@ const BuySell = () => {
                     </button>
                   ) : (
                     <button
-                      onClick={() => handleBuy(product)}
-                      disabled={buyingId === product.id}
-                      style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}
+                      onClick={() => handleBuyRequest(product)}
+                      disabled={requestingId === product.id}
+                      style={{ background: 'linear-gradient(135deg, #6366f1, #4f46e5)' }}
                     >
-                      {buyingId === product.id ? 'Processing...' : '⚡ Buy Now'}
+                      {requestingId === product.id ? 'Sending...' : '📩 Request to Buy'}
                     </button>
                   )}
                 </div>
@@ -274,26 +281,27 @@ const BuySell = () => {
               <div>⏱️ Handover: {selectedProduct.handleTime || 'Immediate'}</div>
             </div>
 
-            <div style={{ display: 'flex', gap: '12px' }}>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
               <button
                 style={{
                   flex: 1,
                   padding: '12px',
                   borderRadius: '12px',
                   border: 'none',
-                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                  background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
                   color: '#fff',
                   fontWeight: '700',
                   cursor: 'pointer'
                 }}
-                onClick={() => handleBuy(selectedProduct)}
+                onClick={() => handleBuyRequest(selectedProduct)}
+                disabled={requestingId === selectedProduct.id}
               >
-                ⚡ Confirm &amp; Buy (₹{selectedProduct.price})
+                {requestingId === selectedProduct.id ? 'Sending Request...' : '📩 Send Buy Request'}
               </button>
               <a
                 href={`tel:${selectedProduct.contact}`}
                 style={{
-                  padding: '12px 18px',
+                  padding: '12px 16px',
                   borderRadius: '12px',
                   border: '1px solid #cbd5e1',
                   background: '#f8fafc',
@@ -306,6 +314,106 @@ const BuySell = () => {
               >
                 📞 Call
               </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BUY REQUEST SUCCESS MODAL */}
+      {requestSuccessData && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}
+          onClick={() => setRequestSuccessData(null)}
+        >
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: '24px',
+              maxWidth: '480px',
+              width: '100%',
+              padding: '28px',
+              textAlign: 'center',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+              position: 'relative'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                border: 'none',
+                background: '#f1f5f9',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                cursor: 'pointer',
+                fontSize: '18px'
+              }}
+              onClick={() => setRequestSuccessData(null)}
+            >
+              ×
+            </button>
+            <div style={{ fontSize: '3rem', marginBottom: '10px' }}>📦</div>
+            <h2 style={{ color: '#1a4a55', marginBottom: '8px' }}>Purchase Request Sent!</h2>
+            <div style={{
+              display: 'inline-block',
+              background: '#e0e7ff',
+              color: '#3730a3',
+              padding: '6px 16px',
+              borderRadius: '20px',
+              fontWeight: '800',
+              fontSize: '1.05rem',
+              marginBottom: '14px'
+            }}>
+              Request ID: #{requestSuccessData.requestId}
+            </div>
+            <p style={{ color: '#475569', fontSize: '0.95rem', lineHeight: '1.5', marginBottom: '20px' }}>
+              Your purchase request for <strong>"{requestSuccessData.productName}"</strong> has been sent to seller <strong>@{requestSuccessData.sellerUsername}</strong>. They have been given options to <strong>Accept</strong>, <strong>Reject</strong>, or <strong>Chat</strong> with you.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button
+                style={{
+                  padding: '12px 20px',
+                  background: '#4f46e5',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '12px',
+                  fontWeight: '700',
+                  cursor: 'pointer'
+                }}
+                onClick={() => {
+                  setRequestSuccessData(null);
+                  navigate('/profile');
+                }}
+              >
+                💬 Open Chat &amp; Profile
+              </button>
+              <button
+                style={{
+                  padding: '12px 20px',
+                  background: '#f1f5f9',
+                  color: '#475569',
+                  border: 'none',
+                  borderRadius: '12px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+                onClick={() => setRequestSuccessData(null)}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
