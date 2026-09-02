@@ -214,7 +214,7 @@ const LostFound = () => {
                         alignItems: 'center',
                         justifyContent: 'center',
                         zIndex: 1000,
-                        padding: '20px'
+                        padding: '16px'
                     }}
                     onClick={() => setSelectedItem(null)}
                 >
@@ -224,7 +224,9 @@ const LostFound = () => {
                             borderRadius: '24px',
                             maxWidth: '520px',
                             width: '100%',
-                            padding: '28px',
+                            maxHeight: '90vh',
+                            overflowY: 'auto',
+                            padding: '24px 20px',
                             boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
                             position: 'relative'
                         }}
@@ -250,11 +252,11 @@ const LostFound = () => {
                         <img
                             src={selectedItem.photo || 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?q=80&w=400&auto=format&fit=crop'}
                             alt={selectedItem.name}
-                            style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '16px', marginBottom: '16px' }}
+                            style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '16px', marginBottom: '16px' }}
                         />
-                        <h2 style={{ fontSize: '1.4rem', color: '#1a4a55', margin: '0 0 8px' }}>{selectedItem.name}</h2>
+                        <h2 style={{ fontSize: '1.3rem', color: '#1a4a55', margin: '0 0 8px' }}>{selectedItem.name}</h2>
                         
-                        <p style={{ color: '#475569', fontSize: '0.92rem', lineHeight: '1.5', marginBottom: '16px' }}>
+                        <p style={{ color: '#475569', fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '16px' }}>
                             {selectedItem.description || 'No description provided.'}
                         </p>
 
@@ -266,11 +268,12 @@ const LostFound = () => {
                             <div>🏷️ Status: {selectedItem.status === 'unclaimed' ? 'Unclaimed' : 'Claimed'}</div>
                         </div>
 
-                        <div style={{ display: 'flex', gap: '12px' }}>
+                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                             {selectedItem.status === 'unclaimed' && (
                                 <button
                                     style={{
                                         flex: 1,
+                                        minWidth: '140px',
                                         padding: '12px',
                                         borderRadius: '12px',
                                         border: 'none',
@@ -287,7 +290,9 @@ const LostFound = () => {
                             <a
                                 href={`tel:${selectedItem.contact}`}
                                 style={{
-                                    padding: '12px 18px',
+                                    flex: 1,
+                                    minWidth: '120px',
+                                    padding: '12px 16px',
                                     borderRadius: '12px',
                                     border: '1px solid #cbd5e1',
                                     background: '#f8fafc',
@@ -295,7 +300,8 @@ const LostFound = () => {
                                     fontWeight: '600',
                                     textDecoration: 'none',
                                     display: 'flex',
-                                    alignItems: 'center'
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
                                 }}
                             >
                                 📞 Call Reporter
@@ -304,6 +310,7 @@ const LostFound = () => {
                     </div>
                 </div>
             )}
+
         </div>
     );
 };

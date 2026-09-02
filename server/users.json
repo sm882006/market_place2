@@ -194,5 +194,12 @@
     "email": "userC_1788208589241@pict.edu",
     "password": "$2b$10$k5JCXWQYEumwuQdTUR6wP.yUOvNVKGsc.eRJUuAFKTW0EdARgMZMS",
     "createdAt": "2026-08-31T20:36:29.781Z"
+  },
+  {
+    "id": "1788378313464",
+    "username": "swayam",
+    "email": "swayam@gmail.com",
+    "password": "$2b$10$6cI5v42ZSeBLWjGqd38tluVgO/6eOPbCK2rPlNVNu4VGscRPebwbe",
+    "createdAt": "2026-09-02T19:45:13.464Z"
   }
 ]

@@ -228,12 +228,25 @@
 
 /* Mobile */
 @media (max-width: 480px) {
+    .signup-container {
+        padding: 16px;
+    }
+
     .signup-card {
-        padding: 30px 24px;
+        padding: 28px 20px;
         border-radius: 22px;
+        max-width: 100%;
     }
 
     .signup-card h2 {
-        font-size: 1.7rem;
+        font-size: 1.6rem;
+    }
+
+    .signup-card input {
+        padding: 12px 14px;
+    }
+
+    .signup-card button {
+        padding: 12px;
     }
 }

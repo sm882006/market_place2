@@ -15,7 +15,8 @@
 }
 
 .rent-form-card {
-    width: 650px;
+    width: 100%;
+    max-width: 650px;
 
     background: rgba(255, 255, 255, 0.35);
 
@@ -152,4 +153,32 @@
 
 .back-btn:hover {
     background: #d1d5db;
+}
+
+@media (max-width: 640px) {
+    .rent-form-page {
+        padding: 20px 16px;
+        align-items: flex-start;
+    }
+
+    .rent-form-card {
+        padding: 24px 18px;
+        border-radius: 20px;
+    }
+
+    .rent-form-card h2 {
+        font-size: 1.6rem;
+        margin-bottom: 18px;
+    }
+
+    .rent-form-card input,
+    .rent-form-card textarea,
+    .rent-form-card select {
+        padding: 10px 12px;
+        font-size: 0.9rem;
+    }
+
+    .rent-form-card button {
+        padding: 12px;
+    }
 }

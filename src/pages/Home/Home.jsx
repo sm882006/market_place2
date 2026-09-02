@@ -16,21 +16,18 @@ const SERVICES = [
         title: 'Buy & Sell',
         desc: 'List your unused items and find great deals from fellow PICT students – from textbooks to electronics.',
         color: '#6366f1',
-        path: '/orderhome',
     },
     {
         icon: '🏠',
         title: 'Rent Marketplace',
         desc: 'Rent calculators, lab equipment, cycles, or hostel appliances for a short period – save money and space.',
         color: '#10b981',
-        path: '/rent',
     },
     {
         icon: '🔍',
         title: 'Lost & Found',
         desc: 'Post or browse found items like ID cards, wallets, keys, and headphones – recover what’s yours quickly.',
         color: '#f59e0b',
-        path: '/lostfound',
     },
 ]
 
@@ -337,9 +334,6 @@ const Home = () => {
                                 </div>
                                 <h3>{s.title}</h3>
                                 <p>{s.desc}</p>
-                                <div style={{ marginTop: '12px', fontSize: '0.9rem', fontWeight: '700', color: s.color }}>
-                                    Explore {s.title} →
-                                </div>
                                 <div className="service-card__glow" />
                             </div>
                         ))}

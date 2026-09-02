@@ -719,7 +719,7 @@ const Profile = () => {
 
                 {/* ════════════ SECTION 3: PRIVATE 1-ON-1 CHATS ════════════ */}
                 {activeSection === 'messages' && (
-                    <div className="profile-chats-container">
+                    <div className={`profile-chats-container ${activeChat ? 'has-active-chat' : 'no-active-chat'}`}>
                         {/* Left: Chat Threads List */}
                         <div className="chats-sidebar">
                             <h3 className="chats-sidebar-title">💬 Conversations</h3>
@@ -763,10 +763,20 @@ const Profile = () => {
                                 <div className="active-chat-box">
                                     <div className="active-chat-header">
                                         <div className="active-chat-header-info">
-                                            <h4>
-                                                Chat with @{activeChat.buyerId === user?.id ? activeChat.sellerUsername : activeChat.buyerUsername}
-                                            </h4>
-                                            <span className="active-item-title">📦 Item: {activeChat.productName}</span>
+                                            <button
+                                                type="button"
+                                                className="chat-back-mobile-btn"
+                                                onClick={() => setActiveChat(null)}
+                                                title="Back to conversations"
+                                            >
+                                                ← Back
+                                            </button>
+                                            <div className="active-chat-header-text">
+                                                <h4>
+                                                    Chat with @{activeChat.buyerId === user?.id ? activeChat.sellerUsername : activeChat.buyerUsername}
+                                                </h4>
+                                                <span className="active-item-title">📦 Item: {activeChat.productName}</span>
+                                            </div>
                                         </div>
 
                                         {/* Seller Quick Approve Bar inside Chat */}

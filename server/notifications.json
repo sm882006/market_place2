@@ -313,7 +313,7 @@
     "price": 25000,
     "days": null,
     "message": "@parth requested to buy your \"laptop\" for ₹25000 (Request ID: #REQ-BUY-9385). You can Accept, Reject, or Chat.",
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-08-31T20:40:34.257Z"
   },
   {
@@ -345,7 +345,7 @@
     "price": null,
     "days": null,
     "message": "@parth: hii i am parth",
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-08-31T20:41:31.247Z"
   },
   {
@@ -361,7 +361,7 @@
     "price": null,
     "days": null,
     "message": "@parth: i am intrested to buy your laptop",
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-08-31T20:41:58.226Z"
   },
   {
@@ -393,7 +393,7 @@
     "price": null,
     "days": null,
     "message": "@parth: okk can you just approve my request",
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-08-31T20:44:04.908Z"
   },
   {
@@ -427,5 +427,69 @@
     "message": "🎉 Great news! @utkarsh ACCEPTED your buy request (#REQ-BUY-9385) for \"laptop\". The item is successfully bought by you!",
     "isRead": false,
     "createdAt": "2026-08-31T20:44:18.468Z"
+  },
+  {
+    "id": "notif_1788284763907_nidc5",
+    "requestId": "REQ-7078",
+    "userId": "1788115938642",
+    "fromUserId": "1787917132716",
+    "fromUsername": "parth",
+    "type": "chat_message",
+    "productId": "prod_1788208773319",
+    "rentId": null,
+    "productName": "laptop",
+    "price": null,
+    "days": null,
+    "message": "@parth: hii",
+    "isRead": true,
+    "createdAt": "2026-09-01T17:46:03.907Z"
+  },
+  {
+    "id": "notif_1788378368513_ft7xg",
+    "requestId": "REQ-BUY-5358",
+    "userId": "1788115938642",
+    "fromUserId": "1788378313464",
+    "fromUsername": "swayam",
+    "type": "buy_request",
+    "productId": "prod_1788378359877",
+    "rentId": null,
+    "productName": "mobile",
+    "price": 30000,
+    "days": null,
+    "message": "@swayam requested to buy your \"mobile\" for ₹30000 (Request ID: #REQ-BUY-5358). You can Accept, Reject, or Chat.",
+    "isRead": true,
+    "createdAt": "2026-09-02T19:46:08.513Z"
+  },
+  {
+    "id": "notif_1788378392496_db3ks",
+    "requestId": "REQ-3112",
+    "userId": "1788378313464",
+    "fromUserId": "1788115938642",
+    "fromUsername": "utkarsh",
+    "type": "chat_message",
+    "productId": "prod_1788378359877",
+    "rentId": null,
+    "productName": "mobile",
+    "price": null,
+    "days": null,
+    "message": "@utkarsh: yaa",
+    "isRead": true,
+    "createdAt": "2026-09-02T19:46:32.496Z"
+  },
+  {
+    "id": "notif_1788378394702_g2snn",
+    "requestId": "REQ-BUY-5358",
+    "userId": "1788378313464",
+    "fromUserId": "1788115938642",
+    "fromUsername": "utkarsh",
+    "type": "sale_approved",
+    "productId": "prod_1788378359877",
+    "rentId": null,
+    "productName": "mobile",
+    "price": 30000,
+    "days": null,
+    "message": "🎉 Great news! @utkarsh ACCEPTED your buy request (#REQ-BUY-5358) for \"mobile\". The item is successfully bought by you!",
+    "isRead": true,
+    "createdAt": "2026-09-02T19:46:34.702Z"
   }
 ]

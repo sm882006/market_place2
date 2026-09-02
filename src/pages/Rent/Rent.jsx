@@ -239,7 +239,7 @@ const Rent = () => {
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 1000,
-            padding: '20px'
+            padding: '16px'
           }}
           onClick={() => setSelectedItem(null)}
         >
@@ -249,12 +249,15 @@ const Rent = () => {
               borderRadius: '24px',
               maxWidth: '560px',
               width: '100%',
-              padding: '28px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              padding: '24px 20px',
               boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
               position: 'relative'
             }}
             onClick={(e) => e.stopPropagation()}
           >
+
             <button
               style={{
                 position: 'absolute',

@@ -10,4 +10,5 @@ run backend server:
 npm run server
 
 run frontend dev server:
-npm run dev
+npm run dev
+npm run dev -- --host;

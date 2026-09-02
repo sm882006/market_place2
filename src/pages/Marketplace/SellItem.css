@@ -15,7 +15,8 @@
 }
 
 .sell-card {
-    width: 650px;
+    width: 100%;
+    max-width: 650px;
 
     background: rgba(255, 255, 255, 0.35);
 
@@ -141,6 +142,34 @@
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@media (max-width: 640px) {
+    .sell-page {
+        padding: 20px 16px;
+        align-items: flex-start;
+    }
+
+    .sell-card {
+        padding: 24px 18px;
+        border-radius: 20px;
+    }
+
+    .sell-card h2 {
+        font-size: 1.6rem;
+        margin-bottom: 18px;
+    }
+
+    .sell-card input,
+    .sell-card textarea,
+    .sell-card select {
+        padding: 10px 12px;
+        font-size: 0.9rem;
+    }
+
+    .sell-card button {
+        padding: 12px;
     }
 }
 
