@@ -1,184 +1,129 @@
+/* ─── Rent Item Form (Minimal & Aesthetic) ─── */
 .rent-form-page {
-    min-height: 100vh;
-    background: linear-gradient(
-        135deg,
-        #d9eef2,
-        #c8e3ea,
-        #b7d8e0
-    );
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    padding: 40px;
+  min-height: 100vh;
+  background: var(--bg-secondary, #f8fafc);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
 }
 
 .rent-form-card {
-    width: 100%;
-    max-width: 650px;
-
-    background: rgba(255, 255, 255, 0.35);
-
-    backdrop-filter: blur(15px);
-
-    border: 1px solid rgba(255, 255, 255, 0.4);
-
-    border-radius: 25px;
-
-    padding: 35px;
-
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-
-    animation: fadeIn 0.5s ease;
+  width: 100%;
+  max-width: 620px;
+  background: #ffffff;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: 20px;
+  padding: 36px 32px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05);
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .rent-form-card h2 {
-    text-align: center;
-
-    color: #244b57;
-
-    margin-bottom: 25px;
-
-    font-size: 2rem;
-
-    font-weight: 700;
+  color: var(--text-primary, #0f172a);
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .rent-form-card form {
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 20px;
+}
 
-    gap: 14px;
+.rent-form-card label {
+  color: var(--text-secondary, #475569);
+  font-weight: 600;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+  display: block;
 }
 
 .rent-form-card input,
 .rent-form-card textarea,
 .rent-form-card select {
-    padding: 12px 15px;
-
-    border: 1px solid rgba(255, 255, 255, 0.5);
-
-    border-radius: 12px;
-
-    background: rgba(255, 255, 255, 0.7);
-
-    font-size: 0.95rem;
-
-    outline: none;
-
-    transition: all 0.3s ease;
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--text-primary, #0f172a);
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.2s ease;
 }
 
 .rent-form-card textarea {
-    min-height: 100px;
-
-    resize: vertical;
+  min-height: 90px;
+  resize: vertical;
 }
 
 .rent-form-card input:focus,
 .rent-form-card textarea:focus,
 .rent-form-card select:focus {
-    border-color: #4caf50;
-
-    box-shadow:
-        0 0 0 4px rgba(76, 175, 80, 0.15);
+  border-color: var(--success, #10b981);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
 }
 
 .rent-form-card input[type="file"] {
-    background: transparent;
-    border: none;
-    padding: 0;
+  background: transparent;
+  border: 1px dashed var(--border-subtle, #e2e8f0);
+  padding: 12px;
+  cursor: pointer;
 }
 
-.rent-form-card button {
-    margin-top: 15px;
-
-    padding: 14px;
-
-    border: none;
-
-    border-radius: 14px;
-
-    background: linear-gradient(
-        135deg,
-        #4caf50,
-        #66bb6a
-    );
-
-    color: white;
-
-    font-size: 1rem;
-
-    font-weight: 600;
-
-    cursor: pointer;
-
-    transition: all 0.3s ease;
+.rent-form-card button[type="submit"] {
+  margin-top: 10px;
+  padding: 13px;
+  border: none;
+  border-radius: 10px;
+  background: var(--success, #10b981);
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.rent-form-card button:hover {
-    transform: translateY(-2px);
-
-    box-shadow:
-        0 8px 20px rgba(76, 175, 80, 0.3);
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(25px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.rent-form-card button[type="submit"]:hover {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
 }
 
 .back-btn {
-    margin-top: 10px;
-    padding: 12px;
-
-    border: none;
-    border-radius: 12px;
-
-    background: #e5e7eb;
-    color: #374151;
-
-    cursor: pointer;
-
-    transition: 0.3s;
+  margin-top: 10px;
+  padding: 11px;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--text-secondary, #475569);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .back-btn:hover {
-    background: #d1d5db;
+  background: var(--bg-tertiary, #f1f5f9);
+  color: var(--text-primary, #0f172a);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @media (max-width: 640px) {
-    .rent-form-page {
-        padding: 20px 16px;
-        align-items: flex-start;
-    }
-
-    .rent-form-card {
-        padding: 24px 18px;
-        border-radius: 20px;
-    }
-
-    .rent-form-card h2 {
-        font-size: 1.6rem;
-        margin-bottom: 18px;
-    }
-
-    .rent-form-card input,
-    .rent-form-card textarea,
-    .rent-form-card select {
-        padding: 10px 12px;
-        font-size: 0.9rem;
-    }
-
-    .rent-form-card button {
-        padding: 12px;
-    }
+  .rent-form-page {
+    padding: 20px 16px;
+  }
+  .rent-form-card {
+    padding: 24px 20px;
+  }
 }

@@ -1,9 +1,11 @@
 @import '../Marketplace/BuySell.css';
 
 .sell-btn {
-    background: #4caf50;
+  background: var(--success, #10b981);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
 }
 
 .sell-btn:hover {
-    background: #43a047;
+  background: #059669;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
 }

@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import './Login.css';
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   const [formData, setFormData] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const from = location.state?.from || '/profile';
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -23,54 +26,74 @@ const Login = () => {
 
     try {
       await login(formData.username, formData.password);
-      navigate('/profile');
+      navigate(from, { replace: true });
     } catch (err) {
-      setError(err.message || 'Login failed. Please try again.');
+      setError(err.message || 'Login failed. Please verify your credentials.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="main_page">
-      <div className="login_page">
-        <form className="container" onSubmit={handleSubmit}>
-          <div className="head">Log In</div>
-          <p className="text">WELCOME BACK</p>
+    <div className="auth-page">
+      <div className="auth-card">
+        <button
+          type="button"
+          className="auth-back-btn"
+          onClick={() => navigate('/')}
+        >
+          ← Back to Home
+        </button>
 
-          {error && <p className="login-error">{error}</p>}
+        <div className="auth-header">
+          <span className="auth-brand-badge">🏛️ MarketPICT</span>
+          <h2>Welcome back</h2>
+          <p>Sign in to your campus account to continue</p>
+        </div>
 
-          <div className="inside_container">
-            <p className="ask">USERNAME</p>
+        {error && <div className="auth-error-banner">{error}</div>}
+
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <div className="auth-field">
+            <label htmlFor="username">Username</label>
             <input
+              id="username"
               type="text"
               name="username"
-              placeholder="Enter Your Username"
-              className="field-input"
+              placeholder="e.g. aditi_k"
               value={formData.username}
               onChange={handleChange}
               required
+              autoFocus
             />
-            <p className="ask">PASSWORD</p>
+          </div>
+
+          <div className="auth-field">
+            <label htmlFor="password">Password</label>
             <input
+              id="password"
               type="password"
               name="password"
-              placeholder="Enter Your Password"
-              className="field-input"
+              placeholder="••••••••"
               value={formData.password}
               onChange={handleChange}
               required
             />
-            <button type="submit" disabled={isLoading}>
-              {isLoading ? 'Logging in...' : 'Log In'}
-            </button>
-            <p className="not_login">
-              Don't have account?{' '}
-              <span onClick={() => navigate('/sign')} style={{ cursor: 'pointer', color: '#8b5cf6' }}>
-                Sign up
-              </span>
-            </p>
           </div>
+
+          <button type="submit" className="auth-submit-btn" disabled={isLoading}>
+            {isLoading ? 'Signing in...' : 'Sign In'}
+          </button>
+
+          <p className="auth-footer-text">
+            Don't have an account?{' '}
+            <span
+              className="auth-link"
+              onClick={() => navigate('/sign', { state: { from } })}
+            >
+              Sign up
+            </span>
+          </p>
         </form>
       </div>
     </div>

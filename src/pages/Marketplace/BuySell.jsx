@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import LoginPromptModal from '../../components/LoginPromptModal';
 import './BuySell.css';
 
 const BuySell = () => {
   const navigate = useNavigate();
-  const { token, user } = useAuth();
+  const { token, user, isAuthenticated, loading: authLoading } = useAuth();
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,6 +17,17 @@ const BuySell = () => {
   const [requestNote, setRequestNote] = useState('');
   const [msg, setMsg] = useState('');
   const [requestSuccessData, setRequestSuccessData] = useState(null);
+
+  // Login prompt modal state
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [blockedAction, setBlockedAction] = useState(null);
+
+  // Prompt for login on landing if user is not authenticated
+  useEffect(() => {
+    if (!authLoading && !token) {
+      setShowLoginModal(true);
+    }
+  }, [authLoading, token]);
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -39,8 +51,8 @@ const BuySell = () => {
   // Request to Buy (generates Request ID & notifies seller with 3 options: Accept, Reject, Chat)
   const handleBuyRequest = async (product) => {
     if (!token) {
-      alert('Please log in first to request items.');
-      navigate('/login');
+      setBlockedAction('send a buy request for this item');
+      setShowLoginModal(true);
       return;
     }
 
@@ -97,18 +109,45 @@ const BuySell = () => {
     <div className="marketplace">
       <div className="marketplace-header">
         <div>
+          <button
+            type="button"
+            className="back-home-link"
+            onClick={() => navigate('/')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '0.85rem',
+              fontWeight: '600',
+              color: 'var(--primary, #4f46e5)',
+              marginBottom: '8px',
+              cursor: 'pointer'
+            }}
+          >
+            ← Back to Home
+          </button>
           <h1>Buy &amp; Sell Marketplace</h1>
-          <p style={{ color: 'rgba(26, 74, 85, 0.7)', fontSize: '0.95rem', margin: '4px 0 0' }}>
+          <p style={{ color: 'var(--text-secondary, #475569)', fontSize: '0.95rem', margin: '4px 0 0' }}>
             Verified campus listings by PICT students
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button className="sell-btn" onClick={() => navigate('/sell-item')}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            className="sell-btn"
+            onClick={() => {
+              if (!token) {
+                setBlockedAction('list an item for sale');
+                setShowLoginModal(true);
+                return;
+              }
+              navigate('/sell-item');
+            }}
+          >
             + Sell Your Item
           </button>
           <button
             className="sell-btn"
-            style={{ background: 'rgba(255,255,255,0.6)', color: '#1a4a55', border: '1px solid rgba(255,255,255,0.8)' }}
+            style={{ background: '#ffffff', color: 'var(--text-primary, #0f172a)', border: '1px solid var(--border-subtle, #e2e8f0)', boxShadow: 'var(--shadow-xs)' }}
             onClick={() => navigate('/profile')}
           >
             👤 Profile &amp; Activity
@@ -417,6 +456,20 @@ const BuySell = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Login prompt modal upon landing or blocked action */}
+      {showLoginModal && (
+        <LoginPromptModal
+          serviceName="Buy &amp; Sell Marketplace"
+          serviceIcon="🛒"
+          isActionBlocked={!!blockedAction}
+          actionText={blockedAction || 'access this service'}
+          onClose={() => {
+            setShowLoginModal(false);
+            setBlockedAction(null);
+          }}
+        />
       )}
     </div>
   );

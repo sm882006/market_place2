@@ -1,16 +1,28 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import LoginPromptModal from '../../components/LoginPromptModal';
 import './OrderHome.css';
 
 const OrderHome = () => {
-    const { token, user } = useAuth();
+    const { token, user, isAuthenticated, loading: authLoading } = useAuth();
     const navigate = useNavigate();
 
     const [products, setProducts] = useState([]);
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    // Login prompt modal state
+    const [showLoginModal, setShowLoginModal] = useState(false);
+    const [blockedAction, setBlockedAction] = useState(null);
+
+    // Prompt for login on landing if user is not authenticated
+    useEffect(() => {
+        if (!authLoading && !token) {
+            setShowLoginModal(true);
+        }
+    }, [authLoading, token]);
 
     // Active View: 'marketplace' or 'orders'
     const [activeView, setActiveView] = useState('marketplace');
@@ -180,8 +192,8 @@ const OrderHome = () => {
     const handleInitiateBuyRequest = (product, e) => {
         if (e) e.stopPropagation();
         if (!token) {
-            alert('Please log in first to request items.');
-            navigate('/login');
+            setBlockedAction('send a buy request for this item');
+            setShowLoginModal(true);
             return;
         }
 
@@ -288,8 +300,8 @@ const OrderHome = () => {
                         className={`view-toggle-btn ${activeView === 'orders' ? 'active' : ''}`}
                         onClick={() => {
                             if (!token) {
-                                alert('Please log in to view your orders.');
-                                navigate('/login');
+                                setBlockedAction('view your orders and purchase history');
+                                setShowLoginModal(true);
                                 return;
                             }
                             setActiveView('orders');
@@ -349,10 +361,20 @@ const OrderHome = () => {
                     </>
                 )}
 
-                {/* Back to Profile Button */}
-                <button className="back-profile-btn" onClick={() => navigate('/profile')}>
-                    👤 View Your Profile & Activity
-                </button>
+                {/* Back to Profile and Home Buttons */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: 'auto', paddingTop: '16px' }}>
+                    <button className="back-profile-btn" onClick={() => navigate('/profile')}>
+                        👤 View Your Profile &amp; Activity
+                    </button>
+                    <button
+                        type="button"
+                        className="back-profile-btn"
+                        style={{ background: 'var(--bg-tertiary, #f1f5f9)', color: 'var(--text-secondary, #475569)' }}
+                        onClick={() => navigate('/')}
+                    >
+                        ← Back to Home
+                    </button>
+                </div>
             </div>
 
             {/* RIGHT SIDE PANEL */}
@@ -383,8 +405,8 @@ const OrderHome = () => {
                             className="sell-btn"
                             onClick={() => {
                                 if (!token) {
-                                    alert('Please log in first to sell items.');
-                                    navigate('/login');
+                                    setBlockedAction('list an item for sale');
+                                    setShowLoginModal(true);
                                     return;
                                 }
                                 setShowSellModal(true);
@@ -865,6 +887,20 @@ const OrderHome = () => {
                         </form>
                     </div>
                 </div>
+            )}
+
+            {/* Login Prompt Modal upon landing or blocked action */}
+            {showLoginModal && (
+                <LoginPromptModal
+                    serviceName="Buy &amp; Sell Marketplace"
+                    serviceIcon="🛒"
+                    isActionBlocked={!!blockedAction}
+                    actionText={blockedAction || 'access this service'}
+                    onClose={() => {
+                        setShowLoginModal(false);
+                        setBlockedAction(null);
+                    }}
+                />
             )}
         </div>
     );

@@ -12,11 +12,13 @@
     "photo": "https://images.unsplash.com/photo-1629739835749-01f11c79f32e?q=80&w=400&auto=format&fit=crop",
     "sellerId": "1781077291630",
     "sellerUsername": "ami",
-    "status": "available",
+    "status": "pending",
     "buyerId": null,
     "buyerUsername": null,
     "createdAt": "2026-06-13T10:00:00.000Z",
-    "soldAt": null
+    "soldAt": null,
+    "pendingBuyerId": "1781077082645",
+    "pendingBuyerUsername": "utk"
   },
   {
     "id": "prod_2",

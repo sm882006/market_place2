@@ -491,5 +491,18 @@
     "message": "🎉 Great news! @utkarsh ACCEPTED your buy request (#REQ-BUY-5358) for \"mobile\". The item is successfully bought by you!",
     "isRead": true,
     "createdAt": "2026-09-02T19:46:34.702Z"
+  },
+  {
+    "id": "notif_1788629351802_9ng8z",
+    "userId": "1781077291630",
+    "fromUserId": "1781077082645",
+    "fromUsername": "utk",
+    "type": "buy_request",
+    "productId": "prod_1",
+    "rentId": null,
+    "productName": "Casio Scientific Calculator FX-991EX",
+    "message": "@utk requested to buy your \"Casio Scientific Calculator FX-991EX\" for ₹750. Chat to coordinate and approve the sale.",
+    "isRead": false,
+    "createdAt": "2026-09-05T17:29:11.802Z"
   }
 ]

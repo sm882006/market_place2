@@ -1,244 +1,178 @@
-/* ─── Marketplace Page ─── */
+/* ─── Marketplace Page (Minimal & Aesthetic) ─── */
 .marketplace {
-    padding: 40px 24px;
-    max-width: 1200px;
-    margin: 0 auto;
-    min-height: 100vh;
-    background: var(--home-bg-gradient, linear-gradient(145deg, #d4eaf0 0%, #b8dde6 40%, #a8d5e2 70%, #c2e2e8 100%));
-    position: relative;
+  padding: 40px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: var(--bg-secondary, #f8fafc);
+  position: relative;
 }
 
-/* Optional: add subtle floating orbs (reuse from home) – you can copy the .bg-orb classes if needed */
-
 .marketplace-header {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
 }
 
 .marketplace-header h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: 2.2rem;
-    font-weight: 700;
-    color: var(--home-text, #1a4a55);
-    background: linear-gradient(135deg, var(--home-accent-light, #8b5cf6), var(--home-accent, #6366f1));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+  letter-spacing: -0.03em;
 }
 
 /* ─── Search & Filter Bar ─── */
 .marketplace-controls {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    align-items: center;
-    width: 100%;
-    margin-bottom: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 30px;
 }
 
 .marketplace-controls input[type="text"] {
-    flex: 1;
-    min-width: 200px;
-    padding: 12px 20px;
-    border-radius: 30px;
-    border: 1px solid rgba(255, 255, 255, 0.7);
-    background: rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(8px);
-    font-size: 0.95rem;
-    color: var(--home-text);
-    outline: none;
-    transition: all 0.3s ease;
+  flex: 1;
+  min-width: 240px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  background: #ffffff;
+  font-size: 0.95rem;
+  color: var(--text-primary, #0f172a);
+  outline: none;
+  box-shadow: var(--shadow-xs);
+  transition: all 0.2s ease;
 }
 
 .marketplace-controls input[type="text"]::placeholder {
-    color: rgba(26, 74, 85, 0.5);
+  color: var(--text-muted, #94a3b8);
 }
 
 .marketplace-controls input[type="text"]:focus {
-    background: rgba(255, 255, 255, 0.7);
-    border-color: var(--home-accent-light);
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+  border-color: var(--primary, #4f46e5);
+  box-shadow: 0 0 0 3px var(--primary-glow, rgba(79, 70, 229, 0.12));
 }
 
 .marketplace-controls select {
-    padding: 12px 20px;
-    border-radius: 30px;
-    border: 1px solid rgba(255, 255, 255, 0.7);
-    background: rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(8px);
-    font-size: 0.95rem;
-    color: var(--home-text);
-    outline: none;
-    cursor: pointer;
-    transition: all 0.3s ease;
+  padding: 12px 18px;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  background: #ffffff;
+  font-size: 0.95rem;
+  color: var(--text-primary, #0f172a);
+  outline: none;
+  cursor: pointer;
+  box-shadow: var(--shadow-xs);
+  transition: all 0.2s ease;
 }
 
 .marketplace-controls select:focus {
-    background: rgba(255, 255, 255, 0.7);
-    border-color: var(--home-accent-light);
+  border-color: var(--primary, #4f46e5);
+  box-shadow: 0 0 0 3px var(--primary-glow, rgba(79, 70, 229, 0.12));
 }
 
-/* ─── Sell Button ─── */
+/* ─── Action Buttons ─── */
 .sell-btn {
-    padding: 12px 28px;
-    border: none;
-    border-radius: 30px;
-    background: linear-gradient(135deg, #8b5cf6, #6366f1);
-    color: #fff;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.25);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    white-space: nowrap;
+  padding: 11px 22px;
+  border: none;
+  border-radius: 10px;
+  background: var(--primary, #4f46e5);
+  color: #ffffff;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
 }
 
 .sell-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+  background: var(--primary-hover, #4338ca);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
 }
 
 .sell-btn:active {
-    transform: translateY(0);
+  transform: translateY(0);
 }
 
 /* ─── Products Grid ─── */
 .products {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 28px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
 }
 
 .product-card {
-    background: rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.7);
-    border-radius: 24px;
-    padding: 20px;
-    box-shadow: 0 8px 32px rgba(26, 74, 85, 0.06);
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-color 0.4s ease;
-    display: flex;
-    flex-direction: column;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  box-shadow: var(--shadow-xs);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .product-card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 16px 48px rgba(26, 74, 85, 0.12);
-    border-color: rgba(139, 92, 246, 0.3);
+  transform: translateY(-4px);
+  border-color: var(--border-hover, #cbd5e1);
+  box-shadow: var(--shadow-md);
 }
 
 .product-card img {
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.3);
-    transition: transform 0.3s ease;
-}
-
-.product-card:hover img {
-    transform: scale(1.02);
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 14px;
+  background: var(--bg-tertiary, #f1f5f9);
 }
 
 .product-card h3 {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--home-text, #1a4a55);
-    margin: 16px 0 4px;
-}
-
-.product-card .price {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--home-accent-light, #8b5cf6);
-    margin-bottom: 12px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-primary, #0f172a);
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
 }
 
 .product-card .meta {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.8rem;
-    color: rgba(26, 74, 85, 0.6);
-    margin-bottom: 14px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-muted, #94a3b8);
+  margin-bottom: 12px;
 }
 
-.product-card .meta span {
-    background: rgba(255, 255, 255, 0.4);
-    padding: 2px 12px;
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.5);
+.product-card .meta span:first-child {
+  background: var(--bg-tertiary, #f1f5f9);
+  color: var(--text-secondary, #475569);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.product-card .price {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+  margin-bottom: 16px;
 }
 
 .product-card button {
-    width: 100%;
-    padding: 12px 16px;
-    border: none;
-    border-radius: 14px;
-    background: linear-gradient(135deg, #8b5cf6, #6366f1);
-    color: #fff;
-    font-weight: 600;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    margin-top: auto;
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
-}
-
-.product-card button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
-}
-
-.product-card button:active {
-    transform: translateY(0);
-}
-
-/* ─── Responsive ─── */
-@media (max-width: 768px) {
-    .marketplace {
-        padding: 24px 16px;
-    }
-
-    .marketplace-header {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .marketplace-header h1 {
-        font-size: 1.8rem;
-        text-align: center;
-    }
-
-    .sell-btn {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .marketplace-controls {
-        flex-direction: column;
-    }
-
-    .marketplace-controls input[type="text"],
-    .marketplace-controls select {
-        width: 100%;
-    }
-
-    .products {
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 16px;
-    }
-}
-
-@media (max-width: 480px) {
-    .products {
-        grid-template-columns: 1fr;
-    }
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  width: 100%;
 }

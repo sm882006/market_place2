@@ -1,0 +1,168 @@
+/* ─── Login Prompt Modal (Minimal & Aesthetic) ─── */
+.login-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.login-modal-overlay.closing {
+  animation: modalFadeOut 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.login-modal-card {
+  background: #ffffff;
+  border-radius: 20px;
+  max-width: 420px;
+  width: 100%;
+  padding: 32px 28px;
+  box-shadow: 0 20px 40px -8px rgba(15, 23, 42, 0.16), 0 0 0 1px rgba(15, 23, 42, 0.05);
+  position: relative;
+  text-align: center;
+  animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.login-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.login-modal-close:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.login-modal-icon-wrap {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 18px;
+  background: #eef2ff;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-modal-icon-wrap .service-icon {
+  font-size: 2rem;
+}
+
+.login-modal-icon-wrap .lock-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  font-size: 1rem;
+  background: #ffffff;
+  border-radius: 50%;
+  padding: 2px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.login-modal-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+
+.login-modal-desc {
+  font-size: 0.92rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.login-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.login-modal-btn {
+  width: 100%;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.login-modal-btn.primary {
+  background: #4f46e5;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+}
+
+.login-modal-btn.primary:hover {
+  background: #4338ca;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+}
+
+.login-modal-btn.secondary {
+  background: #f8fafc;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+}
+
+.login-modal-btn.secondary:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.login-modal-btn.text-link {
+  font-size: 0.85rem;
+  color: #64748b;
+  padding: 8px;
+  font-weight: 500;
+}
+
+.login-modal-btn.text-link:hover {
+  color: #4f46e5;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
