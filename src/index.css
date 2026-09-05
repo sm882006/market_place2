@@ -1,55 +1,42 @@
-/* ─── Global Reset & Minimal Aesthetic Design Tokens ─── */
+/* ─── Global Reset & Glassmorphism Design Tokens ─── */
 :root {
   --font-main: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Poppins', Roboto, Helvetica, Arial, sans-serif;
   
-  /* Minimal Neutral Palette */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --bg-tertiary: #f1f5f9;
-  --bg-card: #ffffff;
+  /* Palette matching CampusCart reference */
+  --brand-primary: #3b49df;
+  --brand-primary-hover: #2f3ab2;
+  --brand-dark: #1e255e;
+  --brand-accent-cyan: #00f0ff;
+  --brand-accent-purple: #7047eb;
   
-  /* Text Colors */
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  --bg-canvas: #f4f6fb;
+  --glass-card: rgba(255, 255, 255, 0.82);
+  --glass-card-hover: rgba(255, 255, 255, 0.94);
+  --glass-border: rgba(255, 255, 255, 0.88);
+  --glass-border-subtle: rgba(226, 232, 240, 0.7);
+  --glass-blur: blur(20px);
   
-  /* Borders & Dividers */
-  --border-subtle: #e2e8f0;
-  --border-hover: #cbd5e1;
-  --border-focus: #6366f1;
+  --text-main: #111827;
+  --text-muted: #4b5563;
+  --text-light: #6b7280;
+  --text-subtle: #9ca3af;
   
-  /* Brand Accent: Refined Modern Indigo */
-  --primary: #4f46e5;
-  --primary-hover: #4338ca;
-  --primary-light: #eef2ff;
-  --primary-glow: rgba(79, 70, 229, 0.12);
+  --badge-green: #10b981;
+  --badge-green-bg: #ecfdf5;
+  --badge-amber: #f59e0b;
+  --badge-amber-bg: #fffbeb;
+  --badge-red: #ef4444;
+  --badge-red-bg: #fef2f2;
   
-  /* Status Accents */
-  --success: #10b981;
-  --success-light: #ecfdf5;
-  --warning: #f59e0b;
-  --warning-light: #fffbeb;
-  --danger: #ef4444;
-  --danger-light: #fef2f2;
+  --shadow-glass: 0 8px 30px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+  --shadow-glass-hover: 0 16px 40px rgba(31, 38, 135, 0.08), 0 2px 6px rgba(0, 0, 0, 0.03);
+  --shadow-accent: 0 8px 24px rgba(59, 73, 223, 0.28);
   
-  /* Minimal Shadows */
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.06), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.07), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
-  
-  /* Transitions */
-  --transition-fast: 0.15s ease;
-  --transition-normal: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  --transition-smooth: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-  
-  /* Radii */
   --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-  --radius-full: 9999px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 26px;
+  --radius-pill: 9999px;
 }
 
 * {
@@ -65,11 +52,40 @@ html, body {
   overflow-x: hidden;
   width: 100%;
   min-height: 100%;
-  background-color: var(--bg-secondary);
-  color: var(--text-primary);
+  background-color: var(--bg-canvas);
+  color: var(--text-main);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ambient glassmorphic glowing backdrop */
+body::before {
+  content: '';
+  position: fixed;
+  top: -150px;
+  left: 5%;
+  width: 650px;
+  height: 650px;
+  background: radial-gradient(circle, rgba(147, 197, 253, 0.35) 0%, rgba(244, 246, 251, 0) 70%);
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: 250px;
+  right: -100px;
+  width: 750px;
+  height: 750px;
+  background: radial-gradient(circle, rgba(196, 181, 253, 0.32) 0%, rgba(244, 246, 251, 0) 70%);
+  border-radius: 50%;
+  filter: blur(90px);
+  pointer-events: none;
+  z-index: 0;
 }
 
 a {
