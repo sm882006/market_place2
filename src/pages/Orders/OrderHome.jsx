@@ -5,7 +5,7 @@ import LoginPromptModal from '../../components/LoginPromptModal';
 import './OrderHome.css';
 
 const OrderHome = () => {
-    const { token, user, isAuthenticated, loading: authLoading } = useAuth();
+    const { token, user, isAuthenticated, loading: authLoading, logout } = useAuth();
     const navigate = useNavigate();
 
     const [products, setProducts] = useState([]);
@@ -227,6 +227,13 @@ const OrderHome = () => {
             const data = await response.json();
 
             if (!response.ok) {
+                if (response.status === 401) {
+                    if (logout) logout();
+                    setShowRequestModal(false);
+                    setBlockedAction('complete your purchase request (session expired)');
+                    setShowLoginModal(true);
+                    return;
+                }
                 throw new Error(data.message || 'Failed to send purchase request');
             }
 

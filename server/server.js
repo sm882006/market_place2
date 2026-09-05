@@ -1090,6 +1090,30 @@ app.post('/api/lostfound', authMiddleware, (req, res) => {
 app.patch('/api/lostfound/:id/claim', authMiddleware, (req, res) => {
   try {
     const { id } = req.params;
+    const {
+      proofDescription,
+      dateLost,
+      locationLost,
+      contactNumber,
+      studentRoll,
+      studentDept,
+      proofPhoto,
+      claimantName
+    } = req.body || {};
+
+    // Validate proof of ownership
+    if (!proofDescription || proofDescription.trim().length < 5) {
+      return res.status(400).json({
+        message: 'Proof of ownership is required! Please describe unique distinguishing marks, scratches, serial numbers, stickers, or contents.'
+      });
+    }
+
+    if (!contactNumber || contactNumber.trim().length < 8) {
+      return res.status(400).json({
+        message: 'A valid contact/WhatsApp number is required so the finder or campus security can reach you.'
+      });
+    }
+
     const items = getLostFound();
     const itemIndex = items.findIndex(i => i.id === id);
 
@@ -1098,17 +1122,52 @@ app.patch('/api/lostfound/:id/claim', authMiddleware, (req, res) => {
     }
 
     const item = items[itemIndex];
+
+    if (item.status === 'claimed') {
+      return res.status(400).json({ message: 'This item has already been marked as claimed.' });
+    }
+
+    if (item.reportedById === req.user.id) {
+      return res.status(400).json({ message: 'You reported this item yourself.' });
+    }
+
     item.status = 'claimed';
     item.claimedById = req.user.id;
     item.claimedByUsername = req.user.username;
+    item.claimedAt = new Date().toISOString();
+    item.proofOfOwnership = {
+      description: proofDescription.trim(),
+      dateLost: dateLost || '',
+      locationLost: locationLost || '',
+      contactNumber: contactNumber.trim(),
+      studentRoll: studentRoll || '',
+      studentDept: studentDept || '',
+      claimantName: claimantName || req.user.username,
+      proofPhoto: proofPhoto || '',
+      submittedAt: new Date().toISOString(),
+    };
+
     items[itemIndex] = item;
     saveLostFound(items);
 
+    // Notify the student who reported the item
+    if (item.reportedById) {
+      createNotification({
+        userId: item.reportedById,
+        fromUserId: req.user.id,
+        fromUsername: req.user.username,
+        type: 'claim_received',
+        productName: item.name,
+        message: `🛡️ ${req.user.username} submitted an ownership claim for "${item.name}" with proof of ownership. Phone: ${contactNumber.trim()}`,
+      });
+    }
+
     res.json({
-      message: 'Item marked as claimed!',
+      message: '🎉 Proof of ownership submitted successfully! The item has been marked as claimed pending verification.',
       item,
     });
   } catch (error) {
+    console.error('Error claiming lost & found item:', error);
     res.status(500).json({ message: 'Failed to claim item.' });
   }
 });

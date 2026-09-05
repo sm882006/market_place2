@@ -6,15 +6,31 @@ import './LostFound.css';
 
 const LostFound = () => {
     const navigate = useNavigate();
-    const { token, user, isAuthenticated, loading: authLoading } = useAuth();
+    const { token, user, isAuthenticated, loading: authLoading, logout } = useAuth();
 
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [locationFilter, setLocationFilter] = useState('');
+    
+    // Details Modal
     const [selectedItem, setSelectedItem] = useState(null);
-    const [claimingId, setClaimingId] = useState(null);
     const [successMsg, setSuccessMsg] = useState('');
+
+    // Proof of Ownership Claim Modal State
+    const [claimItem, setClaimItem] = useState(null);
+    const [submittingClaim, setSubmittingClaim] = useState(false);
+    const [claimError, setClaimError] = useState('');
+    const [proofForm, setProofForm] = useState({
+        proofDescription: '',
+        dateLost: '',
+        locationLost: '',
+        contactNumber: '',
+        studentRoll: '',
+        studentDept: '',
+        proofPhoto: '',
+        declaredTrue: false,
+    });
 
     // Login prompt modal state
     const [showLoginModal, setShowLoginModal] = useState(false);
@@ -46,38 +62,117 @@ const LostFound = () => {
         fetchItems();
     }, [fetchItems]);
 
-    const handleClaim = async (item) => {
-        if (!token) {
-            setBlockedAction('claim this item');
+    // Open Proof of Ownership Modal
+    const openClaimModal = (item) => {
+        if (!token || !isAuthenticated) {
+            setBlockedAction('submit an ownership claim for this item');
             setShowLoginModal(true);
             return;
         }
 
-        if (!window.confirm(`Mark "${item.name}" as claimed?`)) {
+        setClaimItem(item);
+        setClaimError('');
+        setProofForm({
+            proofDescription: '',
+            dateLost: item.date || new Date().toISOString().split('T')[0],
+            locationLost: item.location || '',
+            contactNumber: user?.phone || '',
+            studentRoll: user?.rollNo || '',
+            studentDept: user?.department || '',
+            proofPhoto: '',
+            declaredTrue: false,
+        });
+    };
+
+    // Photo file upload helper (converts to base64)
+    const handleProofPhotoUpload = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > 5 * 1024 * 1024) {
+            setClaimError('Proof photo must be under 5MB.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            setProofForm((prev) => ({ ...prev, proofPhoto: reader.result }));
+        };
+        reader.readAsDataURL(file);
+    };
+
+    // Submit Proof of Ownership Claim
+    const handleSubmitClaim = async (e) => {
+        e.preventDefault();
+        setClaimError('');
+
+        if (!token) {
+            setClaimItem(null);
+            setBlockedAction('submit proof of ownership');
+            setShowLoginModal(true);
+            return;
+        }
+
+        if (!proofForm.proofDescription.trim() || proofForm.proofDescription.trim().length < 8) {
+            setClaimError('Please provide detailed identifying marks (at least 8 characters describing unique scratches, stickers, serial number, or contents).');
+            return;
+        }
+
+        if (!proofForm.contactNumber.trim() || proofForm.contactNumber.trim().length < 8) {
+            setClaimError('Please provide a valid contact/WhatsApp phone number so the finder or campus security can reach you.');
+            return;
+        }
+
+        if (!proofForm.declaredTrue) {
+            setClaimError('You must agree to the PICT Honor Code declaration to submit your claim.');
             return;
         }
 
         try {
-            setClaimingId(item.id);
-            const res = await fetch(`/api/lostfound/${item.id}/claim`, {
+            setSubmittingClaim(true);
+            const res = await fetch(`/api/lostfound/${claimItem.id}/claim`, {
                 method: 'PATCH',
-                headers: { Authorization: `Bearer ${token}` }
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    proofDescription: proofForm.proofDescription.trim(),
+                    dateLost: proofForm.dateLost,
+                    locationLost: proofForm.locationLost,
+                    contactNumber: proofForm.contactNumber.trim(),
+                    studentRoll: proofForm.studentRoll.trim(),
+                    studentDept: proofForm.studentDept.trim(),
+                    proofPhoto: proofForm.proofPhoto,
+                    claimantName: user?.username || user?.name || 'Verified Student'
+                })
             });
 
+            // If token expired or invalid (401), clean up session and show login modal
+            if (res.status === 401) {
+                if (logout) logout();
+                setClaimItem(null);
+                setBlockedAction('verify your identity (your session expired)');
+                setShowLoginModal(true);
+                return;
+            }
+
+            const data = await res.json();
+
             if (res.ok) {
-                setSuccessMsg(`🎉 Item "${item.name}" marked as claimed!`);
-                setTimeout(() => setSuccessMsg(''), 5000);
+                setSuccessMsg(`🎉 Proof of ownership submitted for "${claimItem.name}"! Marked as claimed pending verification.`);
+                setTimeout(() => setSuccessMsg(''), 6000);
+                setClaimItem(null);
                 setSelectedItem(null);
                 fetchItems();
             } else {
-                const data = await res.json();
-                alert(data.message || 'Failed to claim item.');
+                setClaimError(data.message || 'Failed to submit ownership claim.');
             }
         } catch (err) {
             console.error(err);
-            alert('Network error while claiming item.');
+            setClaimError('Network connection error while submitting claim.');
         } finally {
-            setClaimingId(null);
+            setSubmittingClaim(false);
         }
     };
 
@@ -103,7 +198,7 @@ const LostFound = () => {
                             gap: '6px',
                             fontSize: '0.85rem',
                             fontWeight: '600',
-                            color: 'var(--primary, #4f46e5)',
+                            color: 'var(--primary, #2563eb)',
                             marginBottom: '8px',
                             cursor: 'pointer'
                         }}
@@ -139,62 +234,62 @@ const LostFound = () => {
                 </div>
             </div>
 
+            {/* Success message banner */}
             {successMsg && (
-                <div style={{
-                    background: 'linear-gradient(135deg, #10b981, #059669)',
-                    color: '#fff',
-                    padding: '12px 20px',
-                    borderRadius: '16px',
+                <div className="lostfound-success-banner" style={{
+                    background: 'rgba(16, 185, 129, 0.15)',
+                    border: '1px solid rgba(52, 211, 153, 0.5)',
+                    color: '#047857',
+                    padding: '12px 18px',
+                    borderRadius: '12px',
                     marginBottom: '20px',
-                    fontWeight: '600'
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
                 }}>
-                    {successMsg}
+                    <span>{successMsg}</span>
+                    <button onClick={() => setSuccessMsg('')} style={{ color: '#047857', fontSize: '18px', cursor: 'pointer' }}>×</button>
                 </div>
             )}
 
+            {/* Search & Location Filter */}
             <div className="lostfound-controls">
                 <input
                     type="text"
-                    placeholder="Search for ID card, keys, bottle, umbrella, earphones..."
+                    placeholder="Search for ID card, keys, bottle, umbrella, earphones, calculator..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
                 <select value={locationFilter} onChange={(e) => setLocationFilter(e.target.value)}>
                     <option value="">All Locations</option>
-                    <option value="Library">Library</option>
-                    <option value="Main Gate">Main Gate</option>
-                    <option value="Cafeteria">Cafeteria / Canteen</option>
-                    <option value="Classroom">Classrooms</option>
-                    <option value="Hostel">Hostels</option>
-                    <option value="Lab">Computer / Electronics Lab</option>
+                    <option value="Library">Library &amp; Reading Hall</option>
+                    <option value="Canteen">Canteen &amp; Quad</option>
+                    <option value="Lab">Computer &amp; Electronics Labs</option>
+                    <option value="Hostel">Hostels &amp; Parking</option>
+                    <option value="Classroom">Classroom Buildings (A-F)</option>
+                    <option value="Sports">Sports Ground / Gymkhana</option>
                 </select>
             </div>
 
+            {/* Items Grid */}
             {loading ? (
-                <div style={{ textAlign: 'center', padding: '60px 0', color: '#1a4a55', fontWeight: '600' }}>
-                    Loading lost &amp; found items...
+                <div style={{ textAlign: 'center', padding: '60px', color: '#64748b' }}>
+                    <div className="spinner" style={{ margin: '0 auto 12px' }} />
+                    <p>Loading lost &amp; found items...</p>
                 </div>
             ) : filtered.length === 0 ? (
-                <div style={{
-                    textAlign: 'center',
-                    padding: '60px 20px',
-                    background: 'rgba(255,255,255,0.4)',
-                    borderRadius: '20px',
-                    border: '1px dashed rgba(26,74,85,0.2)'
-                }}>
-                    <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>🔍</div>
-                    <h3 style={{ color: '#1a4a55', marginBottom: '8px' }}>No items reported</h3>
-                    <p style={{ color: 'rgba(26,74,85,0.7)', marginBottom: '16px' }}>
-                        Have you found something on campus? Help a peer by reporting it!
+                <div style={{ textAlign: 'center', padding: '60px 20px', background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ fontSize: '2.5rem' }}>🧭</span>
+                    <h3 style={{ margin: '12px 0 6px', color: '#0f172a' }}>No items found</h3>
+                    <p style={{ color: '#64748b', fontSize: '0.9rem' }}>
+                        {search || locationFilter ? 'Try clearing your search or location filter.' : 'No items reported yet.'}
                     </p>
-                    <button className="report-btn" onClick={() => navigate('/lostfound-item')}>
-                        + Report Found Item
-                    </button>
                 </div>
             ) : (
-                <div className="found-items">
+                <div className="lostfound-grid">
                     {filtered.map((item) => (
-                        <div key={item.id} className="found-card">
+                        <div key={item.id} className="lostfound-card">
                             <img
                                 src={item.photo || 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?q=80&w=400&auto=format&fit=crop'}
                                 alt={item.name}
@@ -203,52 +298,427 @@ const LostFound = () => {
                                     e.target.src = 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?q=80&w=400&auto=format&fit=crop';
                                 }}
                             />
-                            <div className="card-body">
-                                <h3>{item.name}</h3>
-                                <div className="meta">
-                                    <div className="meta-item">
-                                        <span className="icon">📍</span>
-                                        <span>{item.location}</span>
-                                    </div>
-                                    <div className="meta-item">
-                                        <span className="icon">📅</span>
-                                        <span>{item.date}</span>
-                                    </div>
-                                </div>
-                                <span className={`status ${item.status}`}>
-                                    {item.status === 'unclaimed' ? '🟡 Unclaimed' : '✅ Claimed'}
-                                </span>
-                                <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                            <span className={`status-pill ${item.status}`}>
+                                {item.status === 'unclaimed' ? '🟡 Unclaimed' : '✅ Claimed'}
+                            </span>
+                            <h3>{item.name}</h3>
+                            <div className="location-tag">📍 {item.location}</div>
+                            <div style={{ fontSize: '0.82rem', color: '#64748b', marginBottom: '14px' }}>
+                                📅 {item.date} • By @{item.reportedByUsername || 'Student'}
+                            </div>
+                            
+                            <div style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
+                                <button
+                                    onClick={() => setSelectedItem(item)}
+                                    style={{
+                                        flex: 1,
+                                        padding: '9px',
+                                        borderRadius: '10px',
+                                        background: 'rgba(37, 99, 235, 0.1)',
+                                        color: '#2563eb',
+                                        border: '1px solid rgba(191, 219, 254, 0.8)',
+                                        cursor: 'pointer',
+                                        fontWeight: '700'
+                                    }}
+                                >
+                                    Details
+                                </button>
+                                {item.status === 'unclaimed' ? (
                                     <button
-                                        onClick={() => setSelectedItem(item)}
-                                        style={{ flex: 1, padding: '8px', borderRadius: '10px', background: 'rgba(99,102,241,0.15)', color: '#4f46e5', border: 'none', cursor: 'pointer', fontWeight: '600' }}
+                                        onClick={() => openClaimModal(item)}
+                                        style={{
+                                            flex: 1,
+                                            padding: '9px',
+                                            borderRadius: '10px',
+                                            background: 'linear-gradient(135deg, #10b981, #059669)',
+                                            color: '#fff',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            fontWeight: '700',
+                                            boxShadow: '0 2px 8px rgba(16, 185, 129, 0.25)'
+                                        }}
                                     >
-                                        Details
+                                        🛡️ Claim
                                     </button>
-                                    {item.status === 'unclaimed' && (
-                                        <button
-                                            onClick={() => handleClaim(item)}
-                                            disabled={claimingId === item.id}
-                                            style={{ flex: 1, padding: '8px', borderRadius: '10px', background: '#10b981', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: '600' }}
-                                        >
-                                            {claimingId === item.id ? 'Claiming...' : 'Claim'}
-                                        </button>
-                                    )}
-                                </div>
+                                ) : (
+                                    <button
+                                        disabled
+                                        style={{
+                                            flex: 1,
+                                            padding: '9px',
+                                            borderRadius: '10px',
+                                            background: '#f1f5f9',
+                                            color: '#94a3b8',
+                                            border: '1px solid #e2e8f0',
+                                            cursor: 'not-allowed',
+                                            fontWeight: '600'
+                                        }}
+                                    >
+                                        Claimed
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ))}
                 </div>
             )}
 
-            {/* Details Modal */}
+            {/* ── 1. PROOF OF OWNERSHIP CLAIM MODAL ── */}
+            {claimItem && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(15, 23, 42, 0.45)',
+                        backdropFilter: 'blur(16px)',
+                        WebkitBackdropFilter: 'blur(16px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 2000,
+                        padding: '16px',
+                        animation: 'modalFadeIn 0.2s ease forwards'
+                    }}
+                    onClick={() => !submittingClaim && setClaimItem(null)}
+                >
+                    <div
+                        style={{
+                            background: 'rgba(255, 255, 255, 0.95)',
+                            backdropFilter: 'blur(24px)',
+                            WebkitBackdropFilter: 'blur(24px)',
+                            borderRadius: '24px',
+                            border: '1px solid rgba(255, 255, 255, 0.9)',
+                            maxWidth: '560px',
+                            width: '100%',
+                            maxHeight: '92vh',
+                            overflowY: 'auto',
+                            padding: '28px 24px',
+                            boxShadow: '0 25px 60px -12px rgba(30, 64, 175, 0.2), inset 0 1px 1px #ffffff',
+                            position: 'relative',
+                            color: '#0f172a'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Close button */}
+                        <button
+                            style={{
+                                position: 'absolute',
+                                top: '18px',
+                                right: '18px',
+                                border: 'none',
+                                background: 'rgba(241, 245, 249, 0.8)',
+                                borderRadius: '50%',
+                                width: '32px',
+                                height: '32px',
+                                cursor: 'pointer',
+                                fontSize: '18px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#64748b'
+                            }}
+                            onClick={() => !submittingClaim && setClaimItem(null)}
+                        >
+                            ×
+                        </button>
+
+                        {/* Modal Header */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                            <div style={{
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '12px',
+                                background: 'linear-gradient(135deg, #2563eb, #38bdf8)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '1.2rem',
+                                color: '#fff',
+                                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)'
+                            }}>
+                                🛡️
+                            </div>
+                            <div>
+                                <h2 style={{ fontSize: '1.35rem', fontWeight: '800', color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
+                                    Proof of Ownership
+                                </h2>
+                                <span style={{ fontSize: '0.8rem', color: '#0284c7', fontWeight: '600' }}>
+                                    Anti-Theft &amp; Verification Protocol
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Item Quick Overview Bar */}
+                        <div style={{
+                            display: 'flex',
+                            gap: '12px',
+                            background: '#f0f7ff',
+                            border: '1px solid #bae6fd',
+                            borderRadius: '14px',
+                            padding: '12px',
+                            margin: '16px 0 18px',
+                            alignItems: 'center'
+                        }}>
+                            <img
+                                src={claimItem.photo || 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?q=80&w=400&auto=format&fit=crop'}
+                                alt={claimItem.name}
+                                style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '10px', flexShrink: 0 }}
+                            />
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontWeight: '750', fontSize: '0.96rem', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {claimItem.name}
+                                </div>
+                                <div style={{ fontSize: '0.78rem', color: '#475569', marginTop: '2px' }}>
+                                    📍 Found: {claimItem.location} • 📅 {claimItem.date}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Anti-Theft Security Notice */}
+                        <div style={{
+                            background: '#fffbeb',
+                            border: '1px solid #fde68a',
+                            borderRadius: '12px',
+                            padding: '10px 14px',
+                            fontSize: '0.8rem',
+                            color: '#92400e',
+                            lineHeight: '1.45',
+                            marginBottom: '18px'
+                        }}>
+                            🔒 <strong>Security Warning:</strong> To protect student property from false or unauthorized claims, you must provide verifiable proof of ownership. The finder and campus authority will verify these details before releasing custody.
+                        </div>
+
+                        {/* Claim Error Banner */}
+                        {claimError && (
+                            <div style={{
+                                background: '#fef2f2',
+                                border: '1px solid #fecaca',
+                                borderRadius: '10px',
+                                padding: '10px 14px',
+                                fontSize: '0.82rem',
+                                color: '#b91c1c',
+                                marginBottom: '16px',
+                                fontWeight: '600'
+                            }}>
+                                ⚠️ {claimError}
+                            </div>
+                        )}
+
+                        {/* Proof Submission Form */}
+                        <form onSubmit={handleSubmitClaim}>
+                            {/* 1. Distinguishing Identification Details */}
+                            <div style={{ marginBottom: '16px' }}>
+                                <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: '750', color: '#0f172a', marginBottom: '6px' }}>
+                                    1. Distinguishing Identification Marks / Hidden Features <span style={{ color: '#dc2626' }}>*</span>
+                                </label>
+                                <textarea
+                                    rows={3}
+                                    style={{
+                                        width: '100%',
+                                        padding: '10px 12px',
+                                        borderRadius: '10px',
+                                        border: '1px solid #cbd5e1',
+                                        fontSize: '0.88rem',
+                                        outline: 'none',
+                                        color: '#0f172a',
+                                        background: '#fff',
+                                        lineHeight: '1.4'
+                                    }}
+                                    placeholder="Describe unique scratches, stickers, custom lock screen, engraving, contents, brand model, or serial numbers that only the rightful owner would know..."
+                                    value={proofForm.proofDescription}
+                                    onChange={(e) => setProofForm({ ...proofForm, proofDescription: e.target.value })}
+                                    required
+                                />
+                            </div>
+
+                            {/* 2. When & Where was it lost */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '700', color: '#334155', marginBottom: '4px' }}>
+                                        Approx. Date Lost <span style={{ color: '#dc2626' }}>*</span>
+                                    </label>
+                                    <input
+                                        type="date"
+                                        style={{
+                                            width: '100%',
+                                            padding: '9px 12px',
+                                            borderRadius: '10px',
+                                            border: '1px solid #cbd5e1',
+                                            fontSize: '0.85rem',
+                                            outline: 'none'
+                                        }}
+                                        value={proofForm.dateLost}
+                                        onChange={(e) => setProofForm({ ...proofForm, dateLost: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '700', color: '#334155', marginBottom: '4px' }}>
+                                        Specific Area Lost
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. Table 14 Reading Hall"
+                                        style={{
+                                            width: '100%',
+                                            padding: '9px 12px',
+                                            borderRadius: '10px',
+                                            border: '1px solid #cbd5e1',
+                                            fontSize: '0.85rem',
+                                            outline: 'none'
+                                        }}
+                                        value={proofForm.locationLost}
+                                        onChange={(e) => setProofForm({ ...proofForm, locationLost: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* 3. Claimant Contact & Roll Number */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '700', color: '#334155', marginBottom: '4px' }}>
+                                        Your Phone / WhatsApp <span style={{ color: '#dc2626' }}>*</span>
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        placeholder="e.g. 9876543210"
+                                        style={{
+                                            width: '100%',
+                                            padding: '9px 12px',
+                                            borderRadius: '10px',
+                                            border: '1px solid #cbd5e1',
+                                            fontSize: '0.85rem',
+                                            outline: 'none'
+                                        }}
+                                        value={proofForm.contactNumber}
+                                        onChange={(e) => setProofForm({ ...proofForm, contactNumber: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '700', color: '#334155', marginBottom: '4px' }}>
+                                        Roll No / Student ID
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. 31245 / TE-COMP"
+                                        style={{
+                                            width: '100%',
+                                            padding: '9px 12px',
+                                            borderRadius: '10px',
+                                            border: '1px solid #cbd5e1',
+                                            fontSize: '0.85rem',
+                                            outline: 'none'
+                                        }}
+                                        value={proofForm.studentRoll}
+                                        onChange={(e) => setProofForm({ ...proofForm, studentRoll: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* 4. Optional Photo Proof / Receipt Upload */}
+                            <div style={{ marginBottom: '16px' }}>
+                                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '700', color: '#334155', marginBottom: '4px' }}>
+                                    Upload Photo Proof / Receipt / Matching ID (Optional)
+                                </label>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleProofPhotoUpload}
+                                    style={{
+                                        width: '100%',
+                                        fontSize: '0.82rem',
+                                        color: '#475569',
+                                        padding: '6px 0'
+                                    }}
+                                />
+                                {proofForm.proofPhoto && (
+                                    <div style={{ marginTop: '8px' }}>
+                                        <img
+                                            src={proofForm.proofPhoto}
+                                            alt="Proof preview"
+                                            style={{ height: '60px', borderRadius: '8px', objectFit: 'cover', border: '1px solid #cbd5e1' }}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 5. Honor Code Declaration */}
+                            <div style={{
+                                display: 'flex',
+                                gap: '10px',
+                                alignItems: 'flex-start',
+                                background: '#f8fafc',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '12px',
+                                padding: '12px',
+                                marginBottom: '20px'
+                            }}>
+                                <input
+                                    type="checkbox"
+                                    id="honorDeclaration"
+                                    checked={proofForm.declaredTrue}
+                                    onChange={(e) => setProofForm({ ...proofForm, declaredTrue: e.target.checked })}
+                                    style={{ marginTop: '3px', cursor: 'pointer' }}
+                                    required
+                                />
+                                <label htmlFor="honorDeclaration" style={{ fontSize: '0.78rem', color: '#334155', lineHeight: '1.4', cursor: 'pointer' }}>
+                                    I declare under the <strong>PICT Student Honor Code</strong> that this item belongs to me. I acknowledge that submitting fraudulent claims for lost/stolen property is a disciplinary violation and will be referred to campus security.
+                                </label>
+                            </div>
+
+                            {/* Action buttons */}
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                                <button
+                                    type="button"
+                                    disabled={submittingClaim}
+                                    onClick={() => setClaimItem(null)}
+                                    style={{
+                                        flex: 1,
+                                        padding: '12px',
+                                        borderRadius: '12px',
+                                        border: '1px solid #cbd5e1',
+                                        background: '#f8fafc',
+                                        color: '#475569',
+                                        fontWeight: '700',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={submittingClaim}
+                                    style={{
+                                        flex: 2,
+                                        padding: '12px',
+                                        borderRadius: '12px',
+                                        border: 'none',
+                                        background: submittingClaim ? '#94a3b8' : 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                                        color: '#fff',
+                                        fontWeight: '750',
+                                        fontSize: '0.92rem',
+                                        cursor: submittingClaim ? 'not-allowed' : 'pointer',
+                                        boxShadow: '0 4px 16px rgba(37, 99, 235, 0.35)'
+                                    }}
+                                >
+                                    {submittingClaim ? 'Verifying & Submitting...' : '🛡️ Submit Proof & Claim'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* ── 2. DETAILS MODAL ── */}
             {selectedItem && (
                 <div
                     style={{
                         position: 'fixed',
                         inset: 0,
-                        background: 'rgba(0,0,0,0.5)',
-                        backdropFilter: 'blur(8px)',
+                        background: 'rgba(15, 23, 42, 0.45)',
+                        backdropFilter: 'blur(16px)',
+                        WebkitBackdropFilter: 'blur(16px)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -266,7 +736,7 @@ const LostFound = () => {
                             maxHeight: '90vh',
                             overflowY: 'auto',
                             padding: '24px 20px',
-                            boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
                             position: 'relative'
                         }}
                         onClick={(e) => e.stopPropagation()}
@@ -282,7 +752,8 @@ const LostFound = () => {
                                 width: '32px',
                                 height: '32px',
                                 cursor: 'pointer',
-                                fontSize: '18px'
+                                fontSize: '18px',
+                                color: '#64748b'
                             }}
                             onClick={() => setSelectedItem(null)}
                         >
@@ -291,21 +762,34 @@ const LostFound = () => {
                         <img
                             src={selectedItem.photo || 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?q=80&w=400&auto=format&fit=crop'}
                             alt={selectedItem.name}
-                            style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '16px', marginBottom: '16px' }}
+                            style={{ width: '100%', height: '190px', objectFit: 'cover', borderRadius: '16px', marginBottom: '16px' }}
                         />
-                        <h2 style={{ fontSize: '1.3rem', color: '#1a4a55', margin: '0 0 8px' }}>{selectedItem.name}</h2>
+                        <h2 style={{ fontSize: '1.3rem', color: '#0f172a', margin: '0 0 8px', fontWeight: '800' }}>{selectedItem.name}</h2>
                         
                         <p style={{ color: '#475569', fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '16px' }}>
                             {selectedItem.description || 'No description provided.'}
                         </p>
 
-                        <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', fontSize: '13px', color: '#475569', marginBottom: '16px' }}>
-                            <div>📍 Found at: {selectedItem.location}</div>
-                            <div>📅 Date: {selectedItem.date}</div>
-                            <div>👤 Reported by: @{selectedItem.reportedByUsername || 'Student'}</div>
-                            <div>📞 Contact: {selectedItem.contact}</div>
-                            <div>🏷️ Status: {selectedItem.status === 'unclaimed' ? 'Unclaimed' : 'Claimed'}</div>
+                        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '14px', borderRadius: '14px', fontSize: '13px', color: '#334155', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <div>📍 <strong>Found at:</strong> {selectedItem.location}</div>
+                            <div>📅 <strong>Date:</strong> {selectedItem.date}</div>
+                            <div>👤 <strong>Reported by:</strong> @{selectedItem.reportedByUsername || 'Student'}</div>
+                            <div>📞 <strong>Contact:</strong> {selectedItem.contact}</div>
+                            <div>🏷️ <strong>Status:</strong> {selectedItem.status === 'unclaimed' ? '🟡 Unclaimed' : '✅ Claimed (Pending Verification)'}</div>
                         </div>
+
+                        {/* If claimed and viewer is reporter or claimant, show proof info */}
+                        {selectedItem.status === 'claimed' && selectedItem.proofOfOwnership && (
+                            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '14px', borderRadius: '14px', fontSize: '13px', color: '#166534', marginBottom: '16px' }}>
+                                <div style={{ fontWeight: '750', marginBottom: '6px', fontSize: '0.88rem' }}>🛡️ Proof of Ownership Submitted:</div>
+                                <div><strong>Claimant:</strong> @{selectedItem.claimedByUsername || selectedItem.proofOfOwnership.claimantName}</div>
+                                <div><strong>Contact:</strong> {selectedItem.proofOfOwnership.contactNumber}</div>
+                                {selectedItem.proofOfOwnership.studentRoll && (
+                                    <div><strong>Roll / PRN:</strong> {selectedItem.proofOfOwnership.studentRoll}</div>
+                                )}
+                                <div><strong>Identifying Marks:</strong> {selectedItem.proofOfOwnership.description}</div>
+                            </div>
+                        )}
 
                         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                             {selectedItem.status === 'unclaimed' && (
@@ -319,11 +803,15 @@ const LostFound = () => {
                                         background: 'linear-gradient(135deg, #10b981, #059669)',
                                         color: '#fff',
                                         fontWeight: '700',
-                                        cursor: 'pointer'
+                                        cursor: 'pointer',
+                                        boxShadow: '0 4px 14px rgba(16, 185, 129, 0.3)'
                                     }}
-                                    onClick={() => handleClaim(selectedItem)}
+                                    onClick={() => {
+                                        setSelectedItem(null);
+                                        openClaimModal(selectedItem);
+                                    }}
                                 >
-                                    ✅ This is Mine (Claim)
+                                    🛡️ This is Mine (Claim with Proof)
                                 </button>
                             )}
                             <a
@@ -350,7 +838,7 @@ const LostFound = () => {
                 </div>
             )}
 
-            {/* Login prompt modal upon landing or blocked action */}
+            {/* ── 3. LOGIN PROMPT MODAL ── */}
             {showLoginModal && (
                 <LoginPromptModal
                     serviceName="Lost &amp; Found"
@@ -367,4 +855,4 @@ const LostFound = () => {
     );
 };
 
-export default LostFound;
+export default LostFound;

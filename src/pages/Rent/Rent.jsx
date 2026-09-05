@@ -6,7 +6,7 @@ import './Rent.css';
 
 const Rent = () => {
   const navigate = useNavigate();
-  const { token, user, isAuthenticated, loading: authLoading } = useAuth();
+  const { token, user, isAuthenticated, loading: authLoading, logout } = useAuth();
 
   const [rents, setRents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -91,6 +91,13 @@ const Rent = () => {
         setTimeout(() => setSuccessMsg(''), 8000);
         fetchRents();
       } else {
+        if (res.status === 401) {
+          if (logout) logout();
+          setSelectedItem(null);
+          setBlockedAction('send this rental request (your session has expired)');
+          setShowLoginModal(true);
+          return;
+        }
         alert(data.message || 'Failed to send rental request.');
       }
     } catch (err) {
