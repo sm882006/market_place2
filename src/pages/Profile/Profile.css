@@ -1,12 +1,15 @@
 /* ─── Profile Page ─── */
+
+    position: relative;
 .profile-page {
     display: flex;
     gap: 32px;
     align-items: flex-start;
     min-height: 100vh;
     padding: 40px 24px;
-    background: var(--bg-secondary, #f8fafc);
+    background: var(--bg-canvas, #edf5ff);
     position: relative;
+    overflow: hidden;
 }
 
 .profile-loading {
@@ -22,12 +25,13 @@
 .profile-card {
     flex: 0 0 380px;
     max-width: 100%;
-    background: #ffffff;
-    border: 1px solid var(--border-subtle, #e2e8f0);
+    background: rgba(255, 255, 255, 0.72);
+border: 1px solid rgba(255, 255, 255, 0.8);
+backdrop-filter: blur(20px);
+-webkit-backdrop-filter: blur(20px);
     border-radius: 20px;
     padding: 36px 28px 28px;
-    box-shadow: var(--shadow-sm);
-    text-align: center;
+box-shadow: 0 12px 40px rgba(37, 99, 235, 0.08);    text-align: center;
     transition: box-shadow 0.4s ease, transform 0.3s ease;
     animation: profileFadeIn 0.6s ease-out;
     position: sticky;
@@ -55,7 +59,11 @@
     width: 90px;
     height: 90px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6, #3b82f6);
+    background: linear-gradient(
+        135deg,
+        var(--brand-primary, #2563eb),
+        var(--brand-cyan, #0284c7)
+    );
     display: flex;
     align-items: center;
     justify-content: center;
@@ -112,7 +120,7 @@
 .stat-num {
     font-size: 1.25rem;
     font-weight: 700;
-    color: #6366f1;
+    color: var(--brand-primary, #2563eb);
 }
 
 .stat-label {
@@ -236,7 +244,7 @@
 }
 
 .profile-back:hover {
-    color: #6366f1;
+    color: #2563eb;
 }
 
 /* ─── Right Panel ─── */
@@ -253,7 +261,7 @@
    ════════════════════════════════════════════════ */
 .options {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 16px;
 }
 
@@ -285,6 +293,28 @@
     transform: translateY(-3px);
     box-shadow: 0 10px 28px rgba(26, 74, 85, 0.08);
     border-color: rgba(99, 102, 241, 0.3);
+}
+
+.option-btn {
+    min-height: 72px;
+    position: relative;
+    overflow: hidden;
+}
+
+.option-btn::after {
+    content: "";
+    position: absolute;
+    width: 70px;
+    height: 70px;
+    right: -25px;
+    bottom: -30px;
+    border-radius: 50%;
+    background: rgba(37, 99, 235, 0.08);
+    transition: transform 0.3s ease;
+}
+
+.option-btn:hover::after {
+    transform: scale(1.6);
 }
 
 .option-btn:active {
@@ -320,7 +350,7 @@
 
 .activity-count-tag {
     background: rgba(99, 102, 241, 0.12);
-    color: #6366f1;
+    color: #2563eb;
     padding: 4px 12px;
     border-radius: 20px;
     font-size: 0.8rem;
@@ -355,9 +385,9 @@
 }
 
 .activity-tab.active {
-    background: #6366f1;
     color: #fff;
-    border-color: #6366f1;
+background: var(--brand-primary, #2563eb);
+    border-color: var(--brand-primary, #2563eb);
     box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
 }
 
@@ -480,7 +510,7 @@
 
 .badge-rent-order {
     background: rgba(99, 102, 241, 0.15);
-    color: #4f46e5;
+    color: #1d4ed8;
     border: 1px solid rgba(99, 102, 241, 0.3);
 }
 
@@ -586,13 +616,13 @@
 }
 
 .cta-btn.primary {
-    background: #6366f1;
+    background: #2563eb;
     color: #fff;
     box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
 }
 
 .cta-btn.primary:hover {
-    background: #4f46e5;
+    background: #1d4ed8;
     transform: translateY(-2px);
 }
 
@@ -621,7 +651,7 @@
     width: 24px;
     height: 24px;
     border: 3px solid rgba(99, 102, 241, 0.2);
-    border-top-color: #6366f1;
+    border-top-color: #2563eb;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
 }
@@ -642,6 +672,10 @@
         padding: 24px 16px;
         gap: 20px;
     }
+
+    .options {
+    grid-template-columns: repeat(2, 1fr);
+}
 
     .profile-card {
         flex: unset;
@@ -818,7 +852,7 @@
     .chat-thread-card.active,
     .chat-thread-card:hover {
         background: #ffffff;
-        border-color: #4f46e5;
+        border-color: #1d4ed8;
     }
 
     /* Active chat fills available space */
@@ -910,7 +944,7 @@
     }
 
     .chat-input-bar input:focus {
-        border-color: #6366f1;
+        border-color: #2563eb;
         box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
     }
 
@@ -1025,7 +1059,7 @@
 
 .chat-action-btn {
     background: rgba(99, 102, 241, 0.12);
-    color: #4f46e5;
+    color: #1d4ed8;
     border: 1px solid rgba(99, 102, 241, 0.3);
     padding: 7px 12px;
     border-radius: 10px;
@@ -1069,7 +1103,7 @@
 
 .profile-notif-card.unread {
     background: rgba(255, 255, 255, 0.95);
-    border-left: 4px solid #4f46e5;
+    border-left: 4px solid #1d4ed8;
     box-shadow: 0 4px 16px rgba(79, 70, 229, 0.1);
 }
 
@@ -1106,7 +1140,7 @@
 }
 
 .notif-type-tag.tag-buy {
-    color: #4f46e5;
+    color: #1d4ed8;
     background: rgba(99, 102, 241, 0.12);
 }
 
@@ -1228,7 +1262,7 @@
 
 .chat-thread-card.active {
     background: #ffffff;
-    border-color: #4f46e5;
+    border-color: #1d4ed8;
     box-shadow: 0 4px 12px rgba(79, 70, 229, 0.12);
 }
 
@@ -1236,7 +1270,7 @@
     width: 38px;
     height: 38px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    background: linear-gradient(135deg, #2563eb, #8b5cf6);
     color: #fff;
     font-weight: 700;
     display: flex;
@@ -1266,7 +1300,7 @@
 
 .thread-badge {
     font-size: 0.68rem;
-    color: #6366f1;
+    color: #2563eb;
     background: rgba(99, 102, 241, 0.1);
     padding: 1px 6px;
     border-radius: 6px;
@@ -1331,7 +1365,7 @@
 .chat-back-mobile-btn {
     display: none;
     background: rgba(99, 102, 241, 0.12);
-    color: #4f46e5;
+    color: #1d4ed8;
     border: 1px solid rgba(99, 102, 241, 0.25);
     padding: 6px 12px;
     border-radius: 10px;
@@ -1343,7 +1377,7 @@
 }
 
 .chat-back-mobile-btn:hover {
-    background: #4f46e5;
+    background: #1d4ed8;
     color: #ffffff;
 }
 
@@ -1414,7 +1448,7 @@
 }
 
 .msg-row.me .msg-bubble {
-    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    background: linear-gradient(135deg, #1d4ed8, #2563eb);
     color: #ffffff;
     border-bottom-right-radius: 4px;
 }
@@ -1461,13 +1495,13 @@
 }
 
 .chat-input-bar input:focus {
-    border-color: #6366f1;
+    border-color: #2563eb;
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
     background: #ffffff;
 }
 
 .chat-input-bar button {
-    background: #4f46e5;
+    background: #1d4ed8;
     color: #ffffff;
     border: none;
     padding: 0 18px;

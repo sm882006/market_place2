@@ -12,6 +12,8 @@ const LostFound = () => {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [locationFilter, setLocationFilter] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
+    
     
     // Details Modal
     const [selectedItem, setSelectedItem] = useState(null);
@@ -180,8 +182,14 @@ const LostFound = () => {
         const matchSearch =
             item.name.toLowerCase().includes(search.toLowerCase()) ||
             (item.description && item.description.toLowerCase().includes(search.toLowerCase()));
-        const matchLocation = !locationFilter || item.location.toLowerCase().includes(locationFilter.toLowerCase());
-        return matchSearch && matchLocation;
+        const matchLocation =
+    !locationFilter ||
+    item.location.toLowerCase().includes(locationFilter.toLowerCase());
+
+const matchStatus =
+    !statusFilter || item.status === statusFilter;
+
+return matchSearch && matchLocation && matchStatus;
     });
 
     return (
@@ -270,6 +278,14 @@ const LostFound = () => {
                     <option value="Classroom">Classroom Buildings (A-F)</option>
                     <option value="Sports">Sports Ground / Gymkhana</option>
                 </select>
+                <select
+    value={statusFilter}
+    onChange={(e) => setStatusFilter(e.target.value)}
+>
+    <option value="">All Items</option>
+    <option value="unclaimed">🟡 Unclaimed</option>
+    <option value="claimed">✅ Claimed</option>
+</select>
             </div>
 
             {/* Items Grid */}
@@ -283,7 +299,7 @@ const LostFound = () => {
                     <span style={{ fontSize: '2.5rem' }}>🧭</span>
                     <h3 style={{ margin: '12px 0 6px', color: '#0f172a' }}>No items found</h3>
                     <p style={{ color: '#64748b', fontSize: '0.9rem' }}>
-                        {search || locationFilter ? 'Try clearing your search or location filter.' : 'No items reported yet.'}
+                        {search || locationFilter || statusFilter ? 'Try clearing your search or filters.' : 'No items reported yet.'}
                     </p>
                 </div>
             ) : (

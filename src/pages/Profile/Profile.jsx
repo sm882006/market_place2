@@ -400,21 +400,26 @@ const Profile = () => {
             <div className="rightpart">
                 {/* 3 Quick Navigation Buttons */}
                 <div className="options">
-                    <button className="option-btn" onClick={() => navigate('/orderhome')}>
-                        <span className="opt-icon">🛒</span>
-                        <span>Buy &amp; Sell Store</span>
-                    </button>
+    <button className="option-btn" onClick={() => navigate('/marketplace')}>
+        <span className="opt-icon">🛒</span>
+        <span>Buy &amp; Sell Store</span>
+    </button>
 
-                    <button className="option-btn" onClick={() => navigate('/rent')}>
-                        <span className="opt-icon">🏠</span>
-                        <span>Rent Marketplace</span>
-                    </button>
+    <button className="option-btn" onClick={() => navigate('/rent')}>
+        <span className="opt-icon">🏠</span>
+        <span>Rent Marketplace</span>
+    </button>
 
-                    <button className="option-btn" onClick={() => navigate('/lostfound')}>
-                        <span className="opt-icon">🔍</span>
-                        <span>Lost &amp; Found</span>
-                    </button>
-                </div>
+    <button className="option-btn" onClick={() => navigate('/lostfound')}>
+        <span className="opt-icon">🔍</span>
+        <span>Lost &amp; Found</span>
+    </button>
+
+    <button className="option-btn" onClick={() => navigate('/wishlist')}>
+        <span className="opt-icon">❤️</span>
+        <span>My Wishlist</span>
+    </button>
+</div>
 
                 {/* Private Section Navigation Tabs */}
                 <div className="profile-section-nav">
@@ -496,7 +501,7 @@ const Profile = () => {
                                 <h3>No activity found</h3>
                                 <p>You haven't listed or ordered any items in this category yet.</p>
                                 <div className="empty-actions">
-                                    <button className="cta-btn primary" onClick={() => navigate('/orderhome')}>
+                                    <button className="cta-btn primary" onClick={() => navigate('/marketplace')}>
                                         + List or Buy Items
                                     </button>
                                 </div>
@@ -702,8 +707,7 @@ const Profile = () => {
                                                     {isApproved && (
                                                         <button
                                                             className="approve-btn small"
-                                                            onClick={() => navigate('/orders')}
-                                                        >
+                                                            onClick={() => setActiveSection('activity')}>
                                                             📑 View In Orders
                                                         </button>
                                                     )}

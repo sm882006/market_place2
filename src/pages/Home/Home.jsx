@@ -26,7 +26,7 @@ const SHOWCASE_DATA = {
       owner: 'Rohan M. (TE IT)',
       photo: 'https://images.unsplash.com/photo-1594980596870-8aa52a78d8cd?q=80&w=600&auto=format&fit=crop',
       actionText: 'Quick Offer',
-      target: '/orderhome',
+      target: '/marketplace',
     },
     {
       id: 'prod_2',
@@ -40,7 +40,7 @@ const SHOWCASE_DATA = {
       owner: 'Sneha K. (BE EnTC)',
       photo: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=600&auto=format&fit=crop',
       actionText: 'Buy Now',
-      target: '/orderhome',
+      target: '/marketplace',
     },
     {
       id: 'prod_3',
@@ -54,7 +54,7 @@ const SHOWCASE_DATA = {
       owner: 'Utkarsh S. (BE Comp)',
       photo: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?q=80&w=600&auto=format&fit=crop',
       actionText: 'Inspect Cycle',
-      target: '/orderhome',
+      target: '/marketplace',
     },
     {
       id: 'prod_4',
@@ -68,7 +68,7 @@ const SHOWCASE_DATA = {
       owner: 'Amey D. (TE Comp)',
       photo: 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=600&auto=format&fit=crop',
       actionText: 'Kit Details',
-      target: '/orderhome',
+      target: '/marketplace',
     },
   ],
   rentals: [
@@ -187,9 +187,9 @@ const Home = () => {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchInput.trim()) {
-      navigate(`/orderhome?search=${encodeURIComponent(searchInput.trim())}`);
+      navigate(`/marketplace?search=${encodeURIComponent(searchInput.trim())}`);
     } else {
-      navigate('/orderhome');
+      navigate('/marketplace');
     }
   };
 
@@ -253,7 +253,7 @@ const Home = () => {
                 className="trending-tag-pill"
                 onClick={() => {
                   setSearchInput(tag);
-                  navigate(`/orderhome?search=${encodeURIComponent(tag)}`);
+                  navigate(`/marketplace?search=${encodeURIComponent(tag)}`);
                 }}
               >
                 {tag}
@@ -275,7 +275,7 @@ const Home = () => {
             {/* Service 1: Buy & Sell */}
             <div
               className="service-glass-card blue-glow"
-              onClick={() => handleServiceClick('/orderhome', 'Buy & Sell Marketplace', '🛍️')}
+              onClick={() => handleServiceClick('/marketplace', 'Buy & Sell Marketplace', '🛍️')}
               role="button"
               tabIndex={0}
             >
@@ -443,7 +443,7 @@ const Home = () => {
               type="button"
               className="btn-explore-full"
               onClick={() => {
-                if (activeTab === 'marketplace') navigate('/orderhome');
+                if (activeTab === 'marketplace') navigate('/marketplace');
                 else if (activeTab === 'rentals') navigate('/rent');
                 else navigate('/lostfound');
               }}
@@ -491,14 +491,14 @@ const Home = () => {
       <footer className="blue-glass-footer">
         <div className="footer-content-wrap">
           <div className="footer-brand-side">
-            <div className="footer-brand-title">⚡ CampusCart PICT</div>
+            <div className="footer-brand-title">⚡ CampusMart PICT</div>
             <p className="footer-brand-sub">
               Built with ❤️ for PICT Pune engineers • Student driven open-source project.
             </p>
           </div>
 
           <div className="footer-quick-links">
-            <button type="button" onClick={() => handleServiceClick('/orderhome', 'Marketplace', '🛍️')}>
+            <button type="button" onClick={() => handleServiceClick('/marketplace', 'Marketplace', '🛍️')}>
               Marketplace
             </button>
             <span className="dot">•</span>
@@ -516,7 +516,7 @@ const Home = () => {
           </div>
 
           <div className="footer-copyright">
-            © 2026 CampusCart PICT. Student peer exchange.
+            © 2026 CampusMart PICT. Student peer exchange.
           </div>
         </div>
       </footer>

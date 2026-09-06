@@ -6,8 +6,7 @@ import './BuySell.css';
 
 const BuySell = () => {
   const navigate = useNavigate();
-  const { token, user, isAuthenticated, loading: authLoading } = useAuth();
-
+  const { token, user } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -18,21 +17,20 @@ const BuySell = () => {
   const [msg, setMsg] = useState('');
   const [requestSuccessData, setRequestSuccessData] = useState(null);
 
-  // Login prompt modal state
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [blockedAction, setBlockedAction] = useState(null);
 
-  // Prompt for login on landing if user is not authenticated
-  useEffect(() => {
-    if (!authLoading && !token) {
-      setShowLoginModal(true);
-    }
-  }, [authLoading, token]);
+  const [sortBy, setSortBy] = useState('');
+const [maxPrice, setMaxPrice] = useState('');
+
+  
 
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
+
       const res = await fetch('/api/products?status=available');
+
       if (res.ok) {
         const data = await res.json();
         setProducts(data);
@@ -48,7 +46,6 @@ const BuySell = () => {
     fetchProducts();
   }, [fetchProducts]);
 
-  // Request to Buy (generates Request ID & notifies seller with 3 options: Accept, Reject, Chat)
   const handleBuyRequest = async (product) => {
     if (!token) {
       setBlockedAction('send a buy request for this item');
@@ -56,34 +53,54 @@ const BuySell = () => {
       return;
     }
 
-    if (user && (product.sellerId === user.id || product.sellerUsername === user.username)) {
+    if (
+      user &&
+      (product.sellerId === user.id ||
+        product.sellerUsername === user.username)
+    ) {
       alert('You cannot request your own listed item!');
       return;
     }
 
     try {
       setRequestingId(product.id);
-      const res = await fetch(`/api/products/${product.id}/buy-request`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          message: requestNote || `Hi @${product.sellerUsername || 'seller'}, I'm interested in buying your "${product.name}" for ₹${product.price}.`
-        })
-      });
+
+      const res = await fetch(
+        `/api/products/${product.id}/buy-request`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            message:
+              requestNote ||
+              `Hi @${product.sellerUsername || 'seller'}, I'm interested in buying your "${product.name}" for ₹${product.price}.`,
+          }),
+        }
+      );
 
       const data = await res.json();
+
       if (res.ok) {
         setRequestSuccessData({
           requestId: data.requestId,
           chatId: data.chatId,
           productName: product.name,
-          sellerUsername: product.sellerUsername || product.seller
+          sellerUsername:
+            product.sellerUsername || product.seller,
         });
+
         setSelectedProduct(null);
-        setMsg(`🎉 Buy Request #${data.requestId} sent to @${product.sellerUsername || product.seller}! They can Accept, Reject, or Chat.`);
+        setRequestNote('');
+
+        setMsg(
+          `🎉 Buy Request #${data.requestId} sent to @${
+            product.sellerUsername || product.seller
+          }!`
+        );
+
         setTimeout(() => setMsg(''), 8000);
         fetchProducts();
       } else {
@@ -97,358 +114,512 @@ const BuySell = () => {
     }
   };
 
-  const filtered = products.filter((p) => {
+  const [wishlist, setWishlist] = useState(() => {
+  return JSON.parse(localStorage.getItem('campusmart-wishlist') || '[]');
+});
+
+const toggleWishlist = (productId) => {
+  setWishlist((prev) => {
+    const updated = prev.includes(productId)
+      ? prev.filter((id) => id !== productId)
+      : [...prev, productId];
+
+    localStorage.setItem(
+      'campusmart-wishlist',
+      JSON.stringify(updated)
+    );
+
+    return updated;
+  });
+};
+
+  const filtered = products
+  .filter((product) => {
+    const searchValue = search.toLowerCase();
+
     const matchSearch =
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      (p.description && p.description.toLowerCase().includes(search.toLowerCase()));
-    const matchCategory = !category || p.category.toLowerCase().includes(category.toLowerCase());
-    return matchSearch && matchCategory;
+      product.name?.toLowerCase().includes(searchValue) ||
+      product.description?.toLowerCase().includes(searchValue);
+
+    const matchCategory =
+      !category ||
+      product.category
+        ?.toLowerCase()
+        .includes(category.toLowerCase());
+
+    const matchPrice =
+      !maxPrice || Number(product.price) <= Number(maxPrice);
+
+    return matchSearch && matchCategory && matchPrice;
+  })
+  .sort((a, b) => {
+    if (sortBy === 'price-low') {
+      return Number(a.price) - Number(b.price);
+    }
+
+    if (sortBy === 'price-high') {
+      return Number(b.price) - Number(a.price);
+    }
+
+    if (sortBy === 'newest') {
+      return (
+        new Date(b.createdAt || 0) -
+        new Date(a.createdAt || 0)
+      );
+    }
+
+    return 0;
   });
 
   return (
-    <div className="marketplace">
-      <div className="marketplace-header">
-        <div>
-          <button
-            type="button"
-            className="back-home-link"
-            onClick={() => navigate('/')}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '0.85rem',
-              fontWeight: '600',
-              color: 'var(--primary, #4f46e5)',
-              marginBottom: '8px',
-              cursor: 'pointer'
-            }}
-          >
-            ← Back to Home
-          </button>
-          <h1>Buy &amp; Sell Marketplace</h1>
-          <p style={{ color: 'var(--text-secondary, #475569)', fontSize: '0.95rem', margin: '4px 0 0' }}>
-            Verified campus listings by PICT students
-          </p>
-        </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <button
-            className="sell-btn"
-            onClick={() => {
-              if (!token) {
-                setBlockedAction('list an item for sale');
-                setShowLoginModal(true);
-                return;
-              }
-              navigate('/sell-item');
-            }}
-          >
-            + Sell Your Item
-          </button>
-          <button
-            className="sell-btn"
-            style={{ background: '#ffffff', color: 'var(--text-primary, #0f172a)', border: '1px solid var(--border-subtle, #e2e8f0)', boxShadow: 'var(--shadow-xs)' }}
-            onClick={() => navigate('/profile')}
-          >
-            👤 Profile &amp; Activity
-          </button>
-        </div>
-      </div>
+    <div className="marketplace-page">
+      <main className="marketplace-container">
 
-      {msg && (
-        <div style={{
-          background: 'linear-gradient(135deg, #10b981, #059669)',
-          color: '#fff',
-          padding: '12px 20px',
-          borderRadius: '16px',
-          marginBottom: '20px',
-          fontWeight: '600'
-        }}>
-          {msg}
-        </div>
-      )}
+        {/* Header */}
+        <section className="marketplace-header">
+          <div className="marketplace-heading">
+            <button
+              type="button"
+              className="back-home-link"
+              onClick={() => navigate('/')}
+            >
+              ← Back to Home
+            </button>
 
-      <div className="marketplace-controls">
-        <input
-          type="text"
-          placeholder="Search for textbooks, electronics, cycles, lab kits..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <select value={category} onChange={(e) => setCategory(e.target.value)}>
-          <option value="">All Categories</option>
-          <option value="Electronics">Electronics &amp; Gadgets</option>
-          <option value="Books">Books</option>
-          <option value="Lab">Lab &amp; Drawing Kits</option>
-          <option value="Bicycles">Bicycles &amp; Vehicles</option>
-          <option value="Hostel">Hostel &amp; Utilities</option>
-          <option value="Others">Others</option>
-        </select>
-      </div>
+            <div className="marketplace-title-row">
+              <div>
+                <span className="marketplace-eyebrow">
+                  PICT STUDENT MARKETPLACE
+                </span>
 
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: '#1a4a55', fontWeight: '600' }}>
-          Loading live campus listings...
-        </div>
-      ) : filtered.length === 0 ? (
-        <div style={{
-          textAlign: 'center',
-          padding: '60px 20px',
-          background: 'rgba(255,255,255,0.4)',
-          borderRadius: '20px',
-          border: '1px dashed rgba(26,74,85,0.2)'
-        }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>📭</div>
-          <h3 style={{ color: '#1a4a55', marginBottom: '8px' }}>No items found</h3>
-          <p style={{ color: 'rgba(26,74,85,0.7)', marginBottom: '16px' }}>
-            Be the first to list an item in this category or check back later!
-          </p>
-          <button className="sell-btn" onClick={() => navigate('/sell-item')}>
-            + List an Item Now
-          </button>
-        </div>
-      ) : (
-        <div className="products">
-          {filtered.map((product) => {
-            const isMine = user && (product.sellerId === user.id || product.sellerUsername === user.username);
-            return (
-              <div key={product.id} className="product-card">
-                <img
-                  src={product.photo || 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=400&auto=format&fit=crop'}
-                  alt={product.name}
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=400&auto=format&fit=crop';
-                  }}
-                />
-                <h3>{product.name}</h3>
-                <div className="meta">
-                  <span>{product.category}</span>
-                  <span>{product.condition || 'Good'}</span>
-                </div>
-                <p className="price">₹{product.price}</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: 'auto' }}>
-                  <button
-                    onClick={() => setSelectedProduct(product)}
-                    style={{ background: 'rgba(99, 102, 241, 0.15)', color: '#4f46e5', border: '1px solid rgba(99, 102, 241, 0.3)' }}
-                  >
-                    View Details
-                  </button>
-                  {isMine ? (
-                    <button onClick={() => navigate('/profile')} style={{ background: '#6366f1' }}>
-                      👤 Your Listing (View)
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleBuyRequest(product)}
-                      disabled={requestingId === product.id}
-                      style={{ background: 'linear-gradient(135deg, #6366f1, #4f46e5)' }}
-                    >
-                      {requestingId === product.id ? 'Sending...' : '📩 Request to Buy'}
-                    </button>
-                  )}
-                </div>
+                <h1>Buy &amp; Sell</h1>
+
+                <p>
+                  Discover useful items listed by verified PICT students.
+                </p>
               </div>
-            );
-          })}
-        </div>
-      )}
+            </div>
+          </div>
 
-      {/* Details Modal */}
+          <div className="marketplace-header-actions">
+            <button
+              className="btn-primary"
+              onClick={() => {
+                if (!token) {
+                  setBlockedAction('list an item for sale');
+                  setShowLoginModal(true);
+                  return;
+                }
+
+                navigate('/sell-item');
+              }}
+            >
+              + Sell Your Item
+            </button>
+
+            <button
+              className="btn-secondary"
+              onClick={() => navigate('/profile')}
+            >
+              👤 Profile
+            </button>
+          </div>
+        </section>
+
+        {/* Success message */}
+        {msg && (
+          <div className="success-banner">
+            <span>✓</span>
+            <span>{msg}</span>
+          </div>
+        )}
+
+        {/* Search & Filters */}
+        <section className="marketplace-toolbar glass-card">
+          <div className="marketplace-search">
+            <span className="search-symbol">⌕</span>
+
+            <input
+              type="text"
+              placeholder="Search textbooks, electronics, cycles, lab kits..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+
+            {search && (
+              <button
+                type="button"
+                className="clear-search"
+                onClick={() => setSearch('')}
+              >
+                ×
+              </button>
+            )}
+          </div>
+
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="category-select"
+          >
+            <option value="">All Categories</option>
+            <option value="Electronics">Electronics &amp; Gadgets</option>
+            <option value="Books">Books</option>
+            <option value="Lab">Lab &amp; Drawing Kits</option>
+            <option value="Bicycles">Bicycles &amp; Vehicles</option>
+            <option value="Hostel">Hostel &amp; Utilities</option>
+            <option value="Others">Others</option>
+          </select>
+          <select
+  value={sortBy}
+  onChange={(e) => setSortBy(e.target.value)}
+  className="category-select"
+>
+  <option value="">Sort By</option>
+  <option value="newest">Newest</option>
+  <option value="price-low">Price: Low to High</option>
+  <option value="price-high">Price: High to Low</option>
+</select>
+
+<input
+  type="number"
+  min="0"
+  placeholder="Max ₹"
+  value={maxPrice}
+  onChange={(e) => setMaxPrice(e.target.value)}
+  className="price-filter"
+/>
+        </section>
+
+        {/* Results summary */}
+        {!loading && (
+          <div className="results-row">
+            <div>
+              <strong>{filtered.length}</strong>{' '}
+              {filtered.length === 1 ? 'listing' : 'listings'} found
+            </div>
+
+            {(search || category || sortBy || maxPrice) && (
+              <button
+                type="button"
+                className="clear-filters"
+                onClick={() => {
+  setSearch('');
+  setCategory('');
+  setSortBy('');
+  setMaxPrice('');
+}}
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Loading */}
+        {loading ? (
+          <div className="marketplace-state glass-card">
+            <div className="loading-spinner" />
+            <h3>Loading campus listings</h3>
+            <p>Finding the latest items from PICT students...</p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="marketplace-state glass-card">
+            <div className="empty-icon">📭</div>
+
+            <h3>No items found</h3>
+
+            <p>
+              Try changing your search or category, or be the first
+              student to list something here.
+            </p>
+
+            <button
+              className="btn-primary"
+              onClick={() => navigate('/sell-item')}
+            >
+              + List an Item
+            </button>
+          </div>
+        ) : (
+          <section className="products">
+            {filtered.map((product) => {
+              const isMine =
+                user &&
+                (product.sellerId === user.id ||
+                  product.sellerUsername === user.username);
+
+              return (
+                <article key={product.id} className="product-card glass-card">
+
+                  {/* Product Image */}
+                  <div className="product-image-wrapper">
+                    <button
+  type="button"
+  className={`wishlist-btn ${
+    wishlist.includes(product.id) ? 'active' : ''
+  }`}
+  onClick={() => toggleWishlist(product.id)}
+  aria-label={
+    wishlist.includes(product.id)
+      ? 'Remove from wishlist'
+      : 'Add to wishlist'
+  }
+>
+  {wishlist.includes(product.id) ? '♥' : '♡'}
+</button>
+                    <img
+                      src={
+                        product.photo ||
+                        'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=600&auto=format&fit=crop'
+                      }
+                      alt={product.name}
+                      className="product-image"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src =
+                          'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=600&auto=format&fit=crop';
+                      }}
+                    />
+
+                    <span className="availability-badge">
+                      ● Available
+                    </span>
+                  </div>
+
+                  {/* Product Information */}
+                  <div className="product-content">
+                    <div className="product-meta">
+                      <span className="category-badge">
+                        {product.category}
+                      </span>
+
+                      <span className="condition-badge">
+                        {product.condition || 'Good'}
+                      </span>
+                    </div>
+
+                    <h3>{product.name}</h3>
+
+                    <p className="product-description">
+                      {product.description ||
+                        'No description provided for this listing.'}
+                    </p>
+
+                    <div className="product-price">
+                      ₹{product.price}
+                    </div>
+
+                    <div className="product-actions">
+                      <button
+                        type="button"
+                        className="details-btn"
+                        onClick={() => setSelectedProduct(product)}
+                      >
+                        View Details
+                      </button>
+
+                      {isMine ? (
+                        <button
+                          type="button"
+                          className="request-btn own-listing"
+                          onClick={() => navigate('/profile')}
+                        >
+                          👤 Your Listing
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="request-btn"
+                          onClick={() => handleBuyRequest(product)}
+                          disabled={requestingId === product.id}
+                        >
+                          {requestingId === product.id
+                            ? 'Sending...'
+                            : '📩 Request to Buy'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </section>
+        )}
+      </main>
+
+      {/* Product Details Modal */}
       {selectedProduct && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.5)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '20px'
-          }}
+          className="modal-backdrop"
           onClick={() => setSelectedProduct(null)}
         >
           <div
-            style={{
-              background: '#fff',
-              borderRadius: '24px',
-              maxWidth: '560px',
-              width: '100%',
-              padding: '28px',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
-              position: 'relative'
-            }}
+            className="product-modal"
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              style={{
-                position: 'absolute',
-                top: '16px',
-                right: '16px',
-                border: 'none',
-                background: '#f1f5f9',
-                borderRadius: '50%',
-                width: '32px',
-                height: '32px',
-                cursor: 'pointer',
-                fontSize: '18px'
-              }}
+              type="button"
+              className="modal-close"
               onClick={() => setSelectedProduct(null)}
             >
               ×
             </button>
+
             <img
-              src={selectedProduct.photo || 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=400&auto=format&fit=crop'}
+              src={
+                selectedProduct.photo ||
+                'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=600&auto=format&fit=crop'
+              }
               alt={selectedProduct.name}
-              style={{ width: '100%', height: '220px', objectFit: 'cover', borderRadius: '16px', marginBottom: '16px' }}
+              className="modal-product-image"
             />
-            <span style={{ background: '#e0e7ff', color: '#4338ca', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: '600' }}>
+
+            <span className="modal-category">
               {selectedProduct.category}
             </span>
-            <h2 style={{ fontSize: '1.4rem', color: '#1a4a55', margin: '10px 0 4px' }}>{selectedProduct.name}</h2>
-            <div style={{ fontSize: '1.4rem', fontWeight: '800', color: '#10b981', marginBottom: '12px' }}>₹{selectedProduct.price}</div>
 
-            <p style={{ color: '#475569', fontSize: '0.92rem', lineHeight: '1.5', marginBottom: '16px' }}>
-              {selectedProduct.description || 'No description provided.'}
-            </p>
+            <h2>{selectedProduct.name}</h2>
 
-            <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', fontSize: '13px', color: '#475569', marginBottom: '16px' }}>
-              <div>👤 Seller: @{selectedProduct.sellerUsername || selectedProduct.seller}</div>
-              <div>📞 Contact: {selectedProduct.contact}</div>
-              <div>⏱️ Handover: {selectedProduct.handleTime || 'Immediate'}</div>
+            <div className="modal-price">
+              ₹{selectedProduct.price}
             </div>
 
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <p className="modal-description">
+              {selectedProduct.description ||
+                'No description provided.'}
+            </p>
+
+            <div className="seller-info">
+              <div>
+                <span>Seller</span>
+                <strong>
+                  @{selectedProduct.sellerUsername ||
+                    selectedProduct.seller ||
+                    'Seller'}
+                </strong>
+              </div>
+
+              <div>
+                <span>Condition</span>
+                <strong>
+                  {selectedProduct.condition || 'Good'}
+                </strong>
+              </div>
+
+              <div>
+                <span>Handover</span>
+                <strong>
+                  {selectedProduct.handleTime || 'Immediate'}
+                </strong>
+              </div>
+            </div>
+
+            <div className="request-note">
+              <label htmlFor="request-note">
+                Add a message to the seller
+              </label>
+
+              <textarea
+                id="request-note"
+                placeholder="Hi! I'm interested in this item..."
+                value={requestNote}
+                onChange={(e) => setRequestNote(e.target.value)}
+                rows="3"
+              />
+            </div>
+
+            <div className="modal-actions">
               <button
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  borderRadius: '12px',
-                  border: 'none',
-                  background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-                  color: '#fff',
-                  fontWeight: '700',
-                  cursor: 'pointer'
-                }}
+                className="btn-primary modal-buy-btn"
                 onClick={() => handleBuyRequest(selectedProduct)}
-                disabled={requestingId === selectedProduct.id}
+                disabled={
+                  requestingId === selectedProduct.id
+                }
               >
-                {requestingId === selectedProduct.id ? 'Sending Request...' : '📩 Send Buy Request'}
+                {requestingId === selectedProduct.id
+                  ? 'Sending Request...'
+                  : '📩 Send Buy Request'}
               </button>
-              <a
-                href={`tel:${selectedProduct.contact}`}
-                style={{
-                  padding: '12px 16px',
-                  borderRadius: '12px',
-                  border: '1px solid #cbd5e1',
-                  background: '#f8fafc',
-                  color: '#334155',
-                  fontWeight: '600',
-                  textDecoration: 'none',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}
-              >
-                📞 Call
-              </a>
+
+              {selectedProduct.contact && (
+                <a
+                  href={`tel:${selectedProduct.contact}`}
+                  className="btn-secondary"
+                >
+                  📞 Call Seller
+                </a>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* BUY REQUEST SUCCESS MODAL */}
+      {/* Buy Request Success Modal */}
       {requestSuccessData && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.5)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '20px'
-          }}
+          className="modal-backdrop"
           onClick={() => setRequestSuccessData(null)}
         >
           <div
-            style={{
-              background: '#fff',
-              borderRadius: '24px',
-              maxWidth: '480px',
-              width: '100%',
-              padding: '28px',
-              textAlign: 'center',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
-              position: 'relative'
-            }}
+            className="success-modal"
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              style={{
-                position: 'absolute',
-                top: '16px',
-                right: '16px',
-                border: 'none',
-                background: '#f1f5f9',
-                borderRadius: '50%',
-                width: '32px',
-                height: '32px',
-                cursor: 'pointer',
-                fontSize: '18px'
-              }}
+              type="button"
+              className="modal-close"
               onClick={() => setRequestSuccessData(null)}
             >
               ×
             </button>
-            <div style={{ fontSize: '3rem', marginBottom: '10px' }}>📦</div>
-            <h2 style={{ color: '#1a4a55', marginBottom: '8px' }}>Purchase Request Sent!</h2>
-            <div style={{
-              display: 'inline-block',
-              background: '#e0e7ff',
-              color: '#3730a3',
-              padding: '6px 16px',
-              borderRadius: '20px',
-              fontWeight: '800',
-              fontSize: '1.05rem',
-              marginBottom: '14px'
-            }}>
-              Request ID: #{requestSuccessData.requestId}
+
+            <div className="success-icon">✓</div>
+
+            <span className="request-label">
+              BUY REQUEST SENT
+            </span>
+
+            <h2>You're on it!</h2>
+
+            <div className="request-id">
+              Request #{requestSuccessData.requestId}
             </div>
-            <p style={{ color: '#475569', fontSize: '0.95rem', lineHeight: '1.5', marginBottom: '20px' }}>
-              Your purchase request for <strong>"{requestSuccessData.productName}"</strong> has been sent to seller <strong>@{requestSuccessData.sellerUsername}</strong>. They have been given options to <strong>Accept</strong>, <strong>Reject</strong>, or <strong>Chat</strong> with you.
+
+            <p>
+              Your request for{' '}
+              <strong>
+                "{requestSuccessData.productName}"
+              </strong>{' '}
+              has been sent to{' '}
+              <strong>
+                @{requestSuccessData.sellerUsername}
+              </strong>.
             </p>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+
+            <div className="request-next-step">
+              <span>💬</span>
+              <div>
+                <strong>What's next?</strong>
+                <p>
+                  The seller can accept, reject, or chat
+                  with you about the item.
+                </p>
+              </div>
+            </div>
+
+            <div className="success-actions">
               <button
-                style={{
-                  padding: '12px 20px',
-                  background: '#4f46e5',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '12px',
-                  fontWeight: '700',
-                  cursor: 'pointer'
-                }}
+                className="btn-primary"
                 onClick={() => {
                   setRequestSuccessData(null);
                   navigate('/profile');
                 }}
               >
-                💬 Open Chat &amp; Profile
+                💬 Open Profile
               </button>
+
               <button
-                style={{
-                  padding: '12px 20px',
-                  background: '#f1f5f9',
-                  color: '#475569',
-                  border: 'none',
-                  borderRadius: '12px',
-                  fontWeight: '600',
-                  cursor: 'pointer'
-                }}
+                className="btn-secondary"
                 onClick={() => setRequestSuccessData(null)}
               >
                 Close
@@ -458,13 +629,15 @@ const BuySell = () => {
         </div>
       )}
 
-      {/* Login prompt modal upon landing or blocked action */}
+      {/* Login Prompt */}
       {showLoginModal && (
         <LoginPromptModal
-          serviceName="Buy &amp; Sell Marketplace"
+          serviceName="Buy & Sell Marketplace"
           serviceIcon="🛒"
           isActionBlocked={!!blockedAction}
-          actionText={blockedAction || 'access this service'}
+          actionText={
+            blockedAction || 'access this service'
+          }
           onClose={() => {
             setShowLoginModal(false);
             setBlockedAction(null);

@@ -6,6 +6,7 @@ const navItems = [
   { label: "Marketplace", path: "/marketplace" },
   { label: "Rent", path: "/rent" },
   { label: "Lost & Found", path: "/lostfound" },
+  { label: "Wishlist", path: "/wishlist" },
 ];
 
 function Navbar() {
