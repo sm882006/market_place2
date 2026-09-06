@@ -504,5 +504,37 @@
     "message": "@utk requested to buy your \"Casio Scientific Calculator FX-991EX\" for ₹750. Chat to coordinate and approve the sale.",
     "isRead": false,
     "createdAt": "2026-09-05T17:29:11.802Z"
+  },
+  {
+    "id": "notif_1788635431125_9sy53",
+    "requestId": "REQ-RENT-2811",
+    "userId": "1781077291630",
+    "fromUserId": "1781077082645",
+    "fromUsername": "utk",
+    "type": "rent_request",
+    "productId": null,
+    "rentId": "rent_1",
+    "productName": "Engineering Drawing Board & Mini Drafter",
+    "price": 30,
+    "days": 2,
+    "message": "@utk requested to rent your \"Engineering Drawing Board & Mini Drafter\" for 2 day(s) (Request ID: #REQ-RENT-2811). You can Accept, Reject, or Chat.",
+    "isRead": false,
+    "createdAt": "2026-09-05T19:10:31.125Z"
+  },
+  {
+    "id": "notif_1788635476461_c6r6v",
+    "requestId": "REQ-7607",
+    "userId": "1781077291630",
+    "fromUserId": "1781077082645",
+    "fromUsername": "utk",
+    "type": "chat_message",
+    "productId": "prod_1",
+    "rentId": null,
+    "productName": "Casio Scientific Calculator FX-991EX",
+    "price": null,
+    "days": null,
+    "message": "@utk: hi can i get this item for 500 rs please",
+    "isRead": false,
+    "createdAt": "2026-09-05T19:11:16.461Z"
   }
 ]

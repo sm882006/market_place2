@@ -275,9 +275,38 @@
         "senderUsername": "utk",
         "text": "Hi @ami, I'm interested in buying your \"Casio Scientific Calculator FX-991EX\" for ₹750. Let's coordinate!",
         "timestamp": "2026-09-05T17:29:11.795Z"
+      },
+      {
+        "id": "msg_1788635476452_nene",
+        "senderId": "1781077082645",
+        "senderUsername": "utk",
+        "text": "hi can i get this item for 500 rs please",
+        "timestamp": "2026-09-05T19:11:16.452Z"
       }
     ],
     "createdAt": "2026-09-05T17:29:11.787Z",
-    "lastMessageAt": "2026-09-05T17:29:11.795Z"
+    "lastMessageAt": "2026-09-05T19:11:16.452Z"
+  },
+  {
+    "id": "chat_1788635431111",
+    "rentId": "rent_1",
+    "productId": null,
+    "productName": "Engineering Drawing Board & Mini Drafter",
+    "productPhoto": "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?q=80&w=400&auto=format&fit=crop",
+    "buyerId": "1781077082645",
+    "buyerUsername": "utk",
+    "sellerId": "1781077291630",
+    "sellerUsername": "ami",
+    "messages": [
+      {
+        "id": "msg_1788635431118",
+        "senderId": "1781077082645",
+        "senderUsername": "utk",
+        "text": "Hi @ami, I would like to rent \"Engineering Drawing Board & Mini Drafter\" for 2 day(s).",
+        "timestamp": "2026-09-05T19:10:31.118Z"
+      }
+    ],
+    "createdAt": "2026-09-05T19:10:31.111Z",
+    "lastMessageAt": "2026-09-05T19:10:31.118Z"
   }
 ]
