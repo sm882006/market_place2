@@ -3,6 +3,7 @@ import './App.css'
 import Home from './pages/Home/Home';
 import Sign from './pages/Auth/Sign';
 import Login from './pages/Auth/Login';
+import Navbar from "./components/Navbar";
 import Profile from './pages/Profile/Profile';
 import OrderHome from './pages/Orders/OrderHome';
 import BuySell from './pages/Marketplace/BuySell';
@@ -13,8 +14,12 @@ import LostFound from './pages/LostFound/LostFound';
 import LostFoundItem from './pages/LostFound/LostFoundItem';
 
 function App() {
+
   return (
-    <Routes>
+    <>
+      <Navbar />
+
+      <Routes>
       <Route path="/orderhome" element={<OrderHome />} />
       <Route path="/" element={<Home />} />
       <Route path="/sign" element={<Sign />} />
@@ -26,8 +31,9 @@ function App() {
       <Route path="/rent-item" element={<RentItem />} />
       <Route path="/lostfound" element={<LostFound />} />
       <Route path="/lostfound-item" element={<LostFoundItem />} />
-    </Routes>
-  )
+      </Routes>
+    </>
+  );
 }
 
 export default App

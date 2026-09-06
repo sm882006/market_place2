@@ -182,15 +182,7 @@ const Home = () => {
     }
   };
 
-  const handlePostClick = () => {
-    if (!isAuthenticated) {
-      setBlockedAction('list an item for the campus');
-      setModalService({ name: 'Quick Post', icon: '📢' });
-      setShowLoginModal(true);
-    } else {
-      navigate('/sell-item');
-    }
-  };
+
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -213,65 +205,7 @@ const Home = () => {
         <span>🎓 Exclusive to verified PICT students • Zero commission peer-to-peer exchange</span>
       </div>
 
-      {/* ── 2. Glassmorphic Navigation Bar ── */}
-      <header className="blue-glass-navbar">
-        <div className="nav-container">
-          <div className="nav-brand" onClick={() => navigate('/')}>
-            <div className="brand-badge-icon">
-              <span className="brand-icon">⚡</span>
-            </div>
-            <div className="brand-text-wrap">
-              <span className="brand-title">CampusCart</span>
-              <span className="brand-sub">PICT Student Hub</span>
-            </div>
-          </div>
 
-          <nav className="nav-links-center">
-            <button
-              type="button"
-              className={`nav-glass-link ${activeTab === 'marketplace' ? 'active' : ''}`}
-              onClick={() => handleServiceClick('/orderhome', 'Buy & Sell Marketplace', '🛍️')}
-            >
-              Marketplace
-            </button>
-            <button
-              type="button"
-              className={`nav-glass-link ${activeTab === 'rentals' ? 'active' : ''}`}
-              onClick={() => handleServiceClick('/rent', 'Campus Rentals', '⏱️')}
-            >
-              Rentals
-            </button>
-            <button
-              type="button"
-              className={`nav-glass-link ${activeTab === 'lostfound' ? 'active' : ''}`}
-              onClick={() => handleServiceClick('/lostfound', 'Lost & Found Hub', '🧭')}
-            >
-              Lost &amp; Found
-            </button>
-          </nav>
-
-          <div className="nav-actions-right">
-            <button type="button" className="btn-glass-post" onClick={handlePostClick}>
-              <span>+</span> Post Item
-            </button>
-
-            {isAuthenticated ? (
-              <div className="user-profile-pill" onClick={() => navigate('/profile')}>
-                <div className="user-avatar-dot" />
-                <span className="user-name-text">{user?.name || 'My Profile'}</span>
-              </div>
-            ) : (
-              <button
-                type="button"
-                className="btn-glass-signin"
-                onClick={() => navigate('/login')}
-              >
-                Sign In
-              </button>
-            )}
-          </div>
-        </div>
-      </header>
 
       {/* ── 3. Main Bounded Content Canvas ── */}
       <main className="content-container">

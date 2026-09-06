@@ -78,7 +78,7 @@ body::before {
   left: 6%;
   width: 700px;
   height: 700px;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.38) 0%, rgba(186, 230, 253, 0.12) 50%, transparent 70%);
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.22) 0%, rgba(186, 230, 253, 0.18) 50%, transparent 70%);
   border-radius: 50%;
   filter: blur(100px);
   pointer-events: none;
@@ -121,4 +121,136 @@ img {
   max-width: 100%;
   height: auto;
   display: block;
+}
+
+/* ─── Global Layout ─── */
+
+#root {
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+}
+
+/* ─── Glass Surface ─── */
+
+.glass-card {
+  background: var(--glass-surface);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: var(--radius-lg);
+  transition: var(--transition-smooth);
+}
+
+.glass-card:hover {
+  background: var(--glass-surface-hover);
+  border-color: var(--glass-border-hover);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* ─── Buttons ─── */
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 11px 18px;
+  border-radius: var(--radius-md);
+
+  background: var(--brand-primary);
+  color: white;
+
+  font-size: 0.9rem;
+  font-weight: 600;
+
+  box-shadow: var(--shadow-button);
+
+  transition: var(--transition-smooth);
+}
+
+.btn-primary:hover {
+  background: var(--brand-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-button-hover);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 11px 18px;
+  border-radius: var(--radius-md);
+
+  background: var(--glass-surface);
+  color: var(--text-primary);
+
+  border: 1px solid var(--glass-border);
+
+  font-size: 0.9rem;
+  font-weight: 600;
+
+  transition: var(--transition-smooth);
+}
+
+.btn-secondary:hover {
+  background: var(--glass-surface-hover);
+  border-color: var(--glass-border-hover);
+}
+
+/* ─── Page Layout ─── */
+
+.page-container {
+  width: min(1200px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 40px 0;
+}
+
+.page-header {
+  margin-bottom: 28px;
+}
+
+.page-title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--text-primary);
+}
+
+.page-subtitle {
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    width: min(100% - 24px, 1200px);
+    padding: 24px 0;
+  }
+
+  .page-title {
+    font-size: 2rem;
+  }
 }
