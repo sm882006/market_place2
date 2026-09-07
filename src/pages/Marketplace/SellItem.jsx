@@ -90,7 +90,7 @@ const SellItem = () => {
           <h2 style={{ margin: 0 }}>Sell Your Item</h2>
           <button
             type="button"
-            onClick={() => navigate('/orderhome')}
+            onClick={() => navigate('/marketplace')}
             style={{
               background: 'none',
               border: 'none',
@@ -204,15 +204,52 @@ const SellItem = () => {
           />
 
           <label>Product Image</label>
-          <input
-            type="text"
-            name="photo"
-            value={form.photo.startsWith('data:') ? '' : form.photo}
-            onChange={handleChange}
-            placeholder="Paste image URL (optional)"
-            style={{ marginBottom: '8px' }}
-          />
-          <input type="file" accept="image/*" onChange={handleImageUpload} />
+
+<div className="image-upload-box">
+  {!form.photo ? (
+    <>
+      <div className="upload-icon">📷</div>
+      <p>Add Product Image</p>
+      <span>JPG, PNG • Max 2MB</span>
+
+      <label className="upload-button">
+        Choose Image
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+          hidden
+        />
+      </label>
+    </>
+  ) : (
+    <div className="image-preview">
+      <img src={form.photo} alt="Product preview" />
+
+      <p>✓ Image selected</p>
+
+      <label className="upload-button">
+        Change Image
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+          hidden
+        />
+      </label>
+
+      <button
+        type="button"
+        className="remove-image-button"
+        onClick={() =>
+          setForm((prev) => ({ ...prev, photo: '' }))
+        }
+      >
+        Remove Image
+      </button>
+    </div>
+  )}
+</div>
 
           <button type="submit" disabled={loading} style={{ marginTop: '20px' }}>
             {loading ? 'Posting Product...' : 'Post Product Now'}
@@ -223,4 +260,4 @@ const SellItem = () => {
   );
 };
 
-export default SellItem;
+export default SellItem;
