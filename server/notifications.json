@@ -536,5 +536,21 @@
     "message": "@utk: hi can i get this item for 500 rs please",
     "isRead": false,
     "createdAt": "2026-09-05T19:11:16.461Z"
+  },
+  {
+    "id": "notif_1788800551350_n1plq",
+    "requestId": "REQ-6750",
+    "userId": "1781077291630",
+    "fromUserId": "1781077082645",
+    "fromUsername": "utk",
+    "type": "chat_message",
+    "productId": "prod_1",
+    "rentId": null,
+    "productName": "Casio Scientific Calculator FX-991EX",
+    "price": null,
+    "days": null,
+    "message": "@utk: ro4i4o",
+    "isRead": false,
+    "createdAt": "2026-09-07T17:02:31.350Z"
   }
 ]

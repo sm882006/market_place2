@@ -1,4 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import "./Navbar.css";
 
 const navItems = [
@@ -11,6 +12,7 @@ const navItems = [
 
 function Navbar() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   const getNavClass = ({ isActive }) =>
     `navbar-link ${isActive ? "active" : ""}`;
@@ -42,21 +44,41 @@ function Navbar() {
 
         {/* Right Actions */}
         <div className="navbar-actions">
-          <button
-            className="sell-button"
-            onClick={() => navigate("/sell-item")}
-          >
-            + Sell Item
-          </button>
+  {isAuthenticated ? (
+    <>
+      <button
+        className="sell-button"
+        onClick={() => navigate("/sell-item")}
+      >
+        + Sell Item
+      </button>
 
-          <button
-            className="profile-button"
-            onClick={() => navigate("/profile")}
-            aria-label="Open profile"
-          >
-            <span className="profile-icon">👤</span>
-          </button>
-        </div>
+      <button
+        className="profile-button"
+        onClick={() => navigate("/profile")}
+        aria-label="Open profile"
+      >
+        <span className="profile-icon">👤</span>
+      </button>
+    </>
+  ) : (
+    <>
+      <button
+        className="login-button"
+        onClick={() => navigate("/login")}
+      >
+        Login
+      </button>
+
+      <button
+        className="signup-button"
+        onClick={() => navigate("/sign")}
+      >
+        Sign Up
+      </button>
+    </>
+  )}
+</div>
       </div>
     </header>
   );

@@ -282,10 +282,17 @@
         "senderUsername": "utk",
         "text": "hi can i get this item for 500 rs please",
         "timestamp": "2026-09-05T19:11:16.452Z"
+      },
+      {
+        "id": "msg_1788800551341_pzxz",
+        "senderId": "1781077082645",
+        "senderUsername": "utk",
+        "text": "ro4i4o",
+        "timestamp": "2026-09-07T17:02:31.341Z"
       }
     ],
     "createdAt": "2026-09-05T17:29:11.787Z",
-    "lastMessageAt": "2026-09-05T19:11:16.452Z"
+    "lastMessageAt": "2026-09-07T17:02:31.341Z"
   },
   {
     "id": "chat_1788635431111",

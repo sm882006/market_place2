@@ -13,6 +13,7 @@ import RentItem from './pages/Rent/RentItem';
 import LostFound from './pages/LostFound/LostFound';
 import LostFoundItem from './pages/LostFound/LostFoundItem';
 import Wishlist from "./pages/Wishlist/Wishlist";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
@@ -20,18 +21,22 @@ function App() {
       <Navbar />
 
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/sign" element={<Sign />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/marketplace" element={<BuySell />} />
-        <Route path="/sell-item" element={<SellItem />} />
-        <Route path="/rent" element={<Rent />} />
-        <Route path="/rent-item" element={<RentItem />} />
-        <Route path="/lostfound" element={<LostFound />} />
-        <Route path="/lostfound-item" element={<LostFoundItem />} />
-        <Route path="/wishlist" element={<Wishlist />} />
-      </Routes>
+  <Route path="/" element={<Home />} />
+  <Route path="/sign" element={<Sign />} />
+  <Route path="/login" element={<Login />} />
+
+  <Route path="/marketplace" element={<BuySell />} />
+  <Route path="/rent" element={<Rent />} />
+  <Route path="/rent-item" element={<RentItem />} />
+  <Route path="/lostfound" element={<LostFound />} />
+  <Route path="/lostfound-item" element={<LostFoundItem />} />
+  <Route path="/wishlist" element={<Wishlist />} />
+
+  <Route element={<ProtectedRoute />}>
+    <Route path="/profile" element={<Profile />} />
+    <Route path="/sell-item" element={<SellItem />} />
+  </Route>
+</Routes>
     </>
   );
 }
