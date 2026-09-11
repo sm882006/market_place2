@@ -17,7 +17,25 @@ const Rent = () => {
   const [requestNote, setRequestNote] = useState('');
   const [isRequesting, setIsRequesting] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
-  const [rentSuccessData, setRentSuccessData] = useState(null);
+  // Wishlist state synced with localStorage
+  const [wishlist, setWishlist] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('campusmart-wishlist') || '[]');
+    } catch {
+      return [];
+    }
+  });
+
+  const toggleWishlist = (itemId) => {
+    setWishlist((prev) => {
+      const updated = prev.includes(itemId)
+        ? prev.filter((id) => id !== itemId)
+        : [...prev, itemId];
+
+      localStorage.setItem('campusmart-wishlist', JSON.stringify(updated));
+      return updated;
+    });
+  };
 
   // Login prompt modal state
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -223,14 +241,28 @@ const Rent = () => {
             const isMine = user && (item.ownerId === user.id || item.ownerUsername === user.username);
             return (
               <div key={item.id} className="product-card">
-                <img
-                  src={item.photo || 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?q=80&w=400&auto=format&fit=crop'}
-                  alt={item.name}
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?q=80&w=400&auto=format&fit=crop';
-                  }}
-                />
+                <div style={{ position: 'relative' }}>
+                  <img
+                    src={item.photo || 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?q=80&w=400&auto=format&fit=crop'}
+                    alt={item.name}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?q=80&w=400&auto=format&fit=crop';
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className={`wishlist-btn ${wishlist.includes(item.id) ? 'active' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleWishlist(item.id);
+                    }}
+                    aria-label={wishlist.includes(item.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                    title={wishlist.includes(item.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                  >
+                    {wishlist.includes(item.id) ? '♥' : '♡'}
+                  </button>
+                </div>
                 <h3>{item.name}</h3>
                 <div className="meta">
                   <span>{item.category}</span>
@@ -423,6 +455,24 @@ const Rent = () => {
                   {isRequesting ? 'Sending...' : `📩 Send Rent Request`}
                 </button>
               )}
+              <button
+                type="button"
+                style={{
+                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  border: '1px solid #cbd5e1',
+                  background: wishlist.includes(selectedItem.id) ? '#fee2e2' : '#f8fafc',
+                  color: wishlist.includes(selectedItem.id) ? '#ef4444' : '#334155',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+                onClick={() => toggleWishlist(selectedItem.id)}
+              >
+                {wishlist.includes(selectedItem.id) ? '♥ Saved to Wishlist' : '♡ Add to Wishlist'}
+              </button>
               <a
                 href={`tel:${selectedItem.contact}`}
                 style={{

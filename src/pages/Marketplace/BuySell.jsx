@@ -542,6 +542,21 @@ const toggleWishlist = (productId) => {
                   : '📩 Send Buy Request'}
               </button>
 
+              <button
+                type="button"
+                className="btn-secondary modal-wishlist-btn"
+                style={{
+                  color: wishlist.includes(selectedProduct.id) ? '#ef4444' : 'inherit',
+                  borderColor: wishlist.includes(selectedProduct.id) ? '#fca5a5' : undefined,
+                  background: wishlist.includes(selectedProduct.id) ? '#fee2e2' : undefined,
+                }}
+                onClick={() => toggleWishlist(selectedProduct.id)}
+              >
+                {wishlist.includes(selectedProduct.id)
+                  ? '♥ Saved to Wishlist'
+                  : '♡ Add to Wishlist'}
+              </button>
+
               {selectedProduct.contact && (
                 <a
                   href={`tel:${selectedProduct.contact}`}

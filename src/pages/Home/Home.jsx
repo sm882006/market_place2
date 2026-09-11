@@ -51,7 +51,7 @@ const SHOWCASE_DATA = {
       badge: 'MOVING OUT SALE',
       condition: 'Serviced Last Month',
       location: 'Hostel 2 Parking',
-      owner: 'Utkarsh S. (BE Comp)',
+      owner: 'Aditya P. (BE Comp)',
       photo: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?q=80&w=600&auto=format&fit=crop',
       actionText: 'Inspect Cycle',
       target: '/marketplace',
@@ -169,6 +169,26 @@ const Home = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [blockedAction, setBlockedAction] = useState(null);
   const [modalService, setModalService] = useState({ name: 'Campus Marketplace', icon: '🛍️' });
+
+  // Wishlist state synced with localStorage
+  const [wishlist, setWishlist] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('campusmart-wishlist') || '[]');
+    } catch {
+      return [];
+    }
+  });
+
+  const toggleWishlist = (productId) => {
+    setWishlist((prev) => {
+      const updated = prev.includes(productId)
+        ? prev.filter((id) => id !== productId)
+        : [...prev, productId];
+
+      localStorage.setItem('campusmart-wishlist', JSON.stringify(updated));
+      return updated;
+    });
+  };
 
   // Handle service navigation: lands on respective page & prompts login if needed
   const handleServiceClick = (route, serviceName, icon) => {
@@ -394,6 +414,18 @@ const Home = () => {
                 <div className="card-image-wrap">
                   <img src={item.photo} alt={item.title} className="card-photo" loading="lazy" />
                   <span className="card-badge-pill">{item.badge}</span>
+                  <button
+                    type="button"
+                    className={`wishlist-btn ${wishlist.includes(item.id) ? 'active' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleWishlist(item.id);
+                    }}
+                    aria-label={wishlist.includes(item.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                    title={wishlist.includes(item.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                  >
+                    {wishlist.includes(item.id) ? '♥' : '♡'}
+                  </button>
                   <div className="card-image-overlay" />
                 </div>
 

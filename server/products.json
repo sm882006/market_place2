@@ -17,8 +17,8 @@
     "buyerUsername": null,
     "createdAt": "2026-06-13T10:00:00.000Z",
     "soldAt": null,
-    "pendingBuyerId": "1781077082645",
-    "pendingBuyerUsername": "utk"
+    "pendingBuyerId": "1781077291630",
+    "pendingBuyerUsername": "rohan_m"
   },
   {
     "id": "prod_2",
@@ -31,8 +31,8 @@
     "category": "Lab & Drawing Kits",
     "description": "Mini drafter, roller scale, sheet container, and drawing board. Perfect for first-year engineering graphics course. No damage, drawing board is clean.",
     "photo": "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?q=80&w=400&auto=format&fit=crop",
-    "sellerId": "1781077082645",
-    "sellerUsername": "utk",
+    "sellerId": "1781077291630",
+    "sellerUsername": "rohan_m",
     "status": "sold",
     "buyerId": "1788115938642",
     "buyerUsername": "utkarsh",

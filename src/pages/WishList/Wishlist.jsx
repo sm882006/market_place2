@@ -14,19 +14,46 @@ const Wishlist = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchWishlistItems = async () => {
       try {
-        const res = await fetch("/api/products?status=available");
+        setLoading(true);
+        const [prodRes, rentRes] = await Promise.allSettled([
+          fetch("/api/products"),
+          fetch("/api/rents")
+        ]);
 
-        if (res.ok) {
-          const data = await res.json();
+        let allItems = [];
 
-          const savedProducts = data.filter((product) =>
-            wishlist.includes(product.id)
-          );
-
-          setProducts(savedProducts);
+        if (prodRes.status === "fulfilled" && prodRes.value.ok) {
+          const prods = await prodRes.value.json();
+          allItems = [
+            ...allItems,
+            ...prods.map((p) => ({
+              ...p,
+              type: "product",
+              displayPrice: `₹${p.price}`,
+            })),
+          ];
         }
+
+        if (rentRes.status === "fulfilled" && rentRes.value.ok) {
+          const rents = await rentRes.value.json();
+          allItems = [
+            ...allItems,
+            ...rents.map((r) => ({
+              ...r,
+              type: "rent",
+              displayPrice: `₹${r.rentPerDay} / day`,
+              category: r.category || "Rental",
+            })),
+          ];
+        }
+
+        const savedProducts = allItems.filter((item) =>
+          wishlist.includes(item.id)
+        );
+
+        setProducts(savedProducts);
       } catch (error) {
         console.error("Error loading wishlist:", error);
       } finally {
@@ -34,7 +61,7 @@ const Wishlist = () => {
       }
     };
 
-    fetchProducts();
+    fetchWishlistItems();
   }, [wishlist]);
 
   const removeFromWishlist = (productId) => {
@@ -157,17 +184,17 @@ const Wishlist = () => {
                     </p>
 
                     <div className="wishlist-price">
-                      ₹{product.price}
+                      {product.displayPrice || `₹${product.price}`}
                     </div>
 
                     <div className="wishlist-actions">
                       <button
                         className="details-btn"
                         onClick={() =>
-                          navigate("/marketplace")
+                          navigate(product.type === "rent" ? "/rent" : "/marketplace")
                         }
                       >
-                        View in Marketplace
+                        {product.type === "rent" ? "View in Rentals" : "View in Marketplace"}
                       </button>
 
                       <button

@@ -191,6 +191,94 @@
   font-size: 1rem;
 }
 
+.user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: var(--radius-md, 12px);
+  background: rgba(224, 242, 254, 0.65);
+  border: 1px solid rgba(186, 230, 253, 0.8);
+  color: var(--brand-primary, #2563eb);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.user-badge:hover {
+  background: rgba(186, 230, 253, 0.9);
+  color: var(--brand-primary-hover, #1d4ed8);
+  transform: translateY(-1px);
+}
+
+.logout-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  border-radius: var(--radius-md, 12px);
+  background: rgba(254, 226, 226, 0.7);
+  color: #dc2626;
+  border: 1px solid rgba(252, 165, 165, 0.6);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.logout-button:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+  transform: translateY(-1px);
+}
+
+.login-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: var(--radius-md, 12px);
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--brand-primary, #2563eb);
+  border: 1px solid rgba(191, 219, 254, 0.8);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.login-button:hover {
+  background: #ffffff;
+  color: var(--brand-primary-hover, #1d4ed8);
+  border-color: var(--brand-primary, #2563eb);
+  transform: translateY(-1px);
+}
+
+.signup-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: var(--radius-md, 12px);
+  background: var(--brand-primary, #2563eb);
+  color: white;
+  border: 1px solid transparent;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--shadow-button);
+  transition: var(--transition-smooth);
+}
+
+.signup-button:hover {
+  background: var(--brand-primary-hover, #1d4ed8);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-button-hover);
+}
+
 /* ─── Mobile ─── */
 
 @media (max-width: 900px) {
