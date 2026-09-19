@@ -5,7 +5,7 @@ const orderTimelineSchema = new mongoose.Schema(
     status: {
       type: String,
       required: true,
-      enum: ['pending', 'approved', 'completed', 'cancelled', 'returned'],
+      enum: ['pending', 'active', 'approved', 'completed', 'cancelled', 'returned'],
     },
     timestamp: {
       type: Date,
@@ -93,7 +93,7 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'approved', 'completed', 'cancelled', 'returned'],
+      enum: ['pending', 'active', 'approved', 'completed', 'cancelled', 'returned'],
       default: 'pending',
       index: true,
     },

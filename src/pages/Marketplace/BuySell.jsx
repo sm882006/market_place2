@@ -557,6 +557,14 @@ const toggleWishlist = (productId) => {
                   : '♡ Add to Wishlist'}
               </button>
 
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => navigate(`/marketplace/${selectedProduct.id}`)}
+              >
+                🔍 Full Details Page
+              </button>
+
               {selectedProduct.contact && (
                 <a
                   href={`tel:${selectedProduct.contact}`}

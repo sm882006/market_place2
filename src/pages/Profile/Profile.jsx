@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import StarRating from '../../components/StarRating';
+import { getSocket } from '../../services/socket';
 import './Profile.css';
 
 const API = '';
@@ -13,9 +15,18 @@ const Profile = () => {
     const [activities, setActivities] = useState([]);
     const [loadingActivity, setLoadingActivity] = useState(true);
     const [activityFilter, setActivityFilter] = useState('all');
-    const [activeSection, setActiveSection] = useState('activity'); // 'activity' | 'notifications' | 'messages'
+    const [activeSection, setActiveSection] = useState('activity'); // 'activity' | 'notifications' | 'messages' | 'reviews'
     const [actionMsg, setActionMsg] = useState('');
     const [processingId, setProcessingId] = useState(null);
+
+    // Reviews state
+    const [reviews, setReviews] = useState([]);
+
+    // OTP verification state
+    const [otpCode, setOtpCode] = useState('');
+    const [otpSent, setOtpSent] = useState(false);
+    const [otpLoading, setOtpLoading] = useState(false);
+    const [otpFeedback, setOtpFeedback] = useState('');
 
     // Private Notifications state
     const [notifications, setNotifications] = useState([]);
@@ -88,6 +99,73 @@ const Profile = () => {
         }
     }, [token]);
 
+    // Fetch reviews received
+    const loadReviews = useCallback(async () => {
+        if (!user?.username) return;
+        try {
+            const res = await fetch(`${API}/api/reviews/seller/${user.username}`);
+            if (res.ok) {
+                const data = await res.json();
+                setReviews(data || []);
+            }
+        } catch (err) {
+            console.error('Error fetching reviews:', err);
+        }
+    }, [user?.username]);
+
+    // Request Student Verification OTP
+    const handleSendOtp = async () => {
+        try {
+            setOtpLoading(true);
+            setOtpFeedback('');
+            const res = await fetch(`${API}/api/auth/send-otp`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setOtpSent(true);
+                setOtpFeedback(data.message || 'OTP generated! (Check server console in development)');
+            } else {
+                setOtpFeedback(data.message || 'Failed to send OTP.');
+            }
+        } catch (err) {
+            setOtpFeedback('Network error sending OTP.');
+        } finally {
+            setOtpLoading(false);
+        }
+    };
+
+    // Verify OTP
+    const handleVerifyOtp = async (e) => {
+        e.preventDefault();
+        if (!otpCode.trim()) return;
+        try {
+            setOtpLoading(true);
+            const res = await fetch(`${API}/api/auth/verify-otp`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ otp: otpCode }),
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setOtpFeedback(data.message);
+                setProfileData((prev) => ({ ...prev, isVerified: true }));
+                setOtpSent(false);
+                setOtpCode('');
+            } else {
+                setOtpFeedback(data.message || 'Invalid code.');
+            }
+        } catch (err) {
+            setOtpFeedback('Error verifying OTP.');
+        } finally {
+            setOtpLoading(false);
+        }
+    };
+
     // Initial loading and polling for logged-in user
     useEffect(() => {
         if (token) {
@@ -105,15 +183,42 @@ const Profile = () => {
             loadUserActivity();
             loadNotifications();
             loadChats();
+            loadReviews();
 
-            // Background polling every 10s for private updates
+            // Setup real-time Socket.IO events
+            const socket = getSocket();
+            if (user?.username) {
+                socket.emit('join_user', user.username);
+            }
+
+            const handleNewNotif = (notif) => {
+                setNotifications((prev) => [notif, ...prev]);
+                setUnreadNotifsCount((prev) => prev + 1);
+            };
+
+            const handleNewMsg = (data) => {
+                loadChats();
+                if (activeChat && activeChat.id === data.chatId) {
+                    setMessages((prev) => [...prev, data.message]);
+                }
+            };
+
+            socket.on('new_notification', handleNewNotif);
+            socket.on('new_message', handleNewMsg);
+
+            // Background polling fallback every 12s
             const timer = setInterval(() => {
                 loadNotifications();
                 loadChats();
-            }, 10000);
-            return () => clearInterval(timer);
+            }, 12000);
+
+            return () => {
+                clearInterval(timer);
+                socket.off('new_notification', handleNewNotif);
+                socket.off('new_message', handleNewMsg);
+            };
         }
-    }, [token, loadUserActivity, loadNotifications, loadChats]);
+    }, [token, user?.username, loadUserActivity, loadNotifications, loadChats, loadReviews, activeChat]);
 
     // Load active chat thread messages
     const selectChat = async (chat) => {
@@ -385,6 +490,71 @@ const Profile = () => {
                     </div>
                 </div>
 
+                {/* Seller Reputation */}
+                <div style={{ marginTop: '14px', padding: '10px 14px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 700, letterSpacing: '0.04em', marginBottom: '4px' }}>SELLER RATING</div>
+                    <StarRating value={displayUser?.ratingsAverage || 5.0} count={displayUser?.ratingsCount || 0} size="1rem" />
+                </div>
+
+                {/* College Student Verification Badge / OTP */}
+                <div style={{ marginTop: '14px', padding: '12px', borderRadius: '12px', background: displayUser?.isVerified ? '#ecfdf5' : '#eff6ff', border: displayUser?.isVerified ? '1px solid #a7f3d0' : '1px solid #bfdbfe', textAlign: 'left' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, fontSize: '0.85rem', color: displayUser?.isVerified ? '#065f46' : '#1e40af' }}>
+                        <span>{displayUser?.isVerified ? '✓ Verified Student (PICT)' : '🎓 Unverified Student'}</span>
+                    </div>
+                    {displayUser?.isVerified ? (
+                        <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: '#047857' }}>
+                            Your student identity is verified on campus.
+                        </p>
+                    ) : (
+                        <div style={{ marginTop: '8px' }}>
+                            <p style={{ margin: '0 0 8px', fontSize: '0.78rem', color: '#1e3a8a' }}>
+                                Verify your college credentials with a 6-digit OTP.
+                            </p>
+                            {!otpSent ? (
+                                <button
+                                    onClick={handleSendOtp}
+                                    disabled={otpLoading}
+                                    style={{ width: '100%', padding: '6px 12px', borderRadius: '8px', background: '#0284c7', color: '#fff', border: 'none', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}
+                                >
+                                    {otpLoading ? 'Generating OTP...' : 'Send Verification OTP'}
+                                </button>
+                            ) : (
+                                <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <input
+                                        type="text"
+                                        maxLength="6"
+                                        placeholder="Enter 6-digit OTP"
+                                        value={otpCode}
+                                        onChange={(e) => setOtpCode(e.target.value)}
+                                        style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #93c5fd', fontSize: '0.85rem' }}
+                                    />
+                                    <div style={{ display: 'flex', gap: '6px' }}>
+                                        <button
+                                            type="submit"
+                                            disabled={otpLoading}
+                                            style={{ flex: 1, padding: '6px', borderRadius: '6px', background: '#10b981', color: '#fff', border: 'none', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}
+                                        >
+                                            {otpLoading ? 'Verifying...' : 'Verify OTP'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleSendOtp}
+                                            style={{ background: 'none', border: 'none', color: '#0284c7', fontSize: '0.75rem', cursor: 'pointer' }}
+                                        >
+                                            Resend
+                                        </button>
+                                    </div>
+                                </form>
+                            )}
+                            {otpFeedback && (
+                                <div style={{ marginTop: '6px', fontSize: '0.75rem', color: '#0369a1', fontWeight: 500 }}>
+                                    {otpFeedback}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
                 {actionMsg && <div className="profile-success-banner">{actionMsg}</div>}
 
                 <button className="profile-logout-btn" onClick={handleLogout}>
@@ -398,28 +568,40 @@ const Profile = () => {
 
             {/* ─── Right Panel: Private Dashboard ─── */}
             <div className="rightpart">
-                {/* 3 Quick Navigation Buttons */}
+                {/* Quick Navigation Buttons */}
                 <div className="options">
-    <button className="option-btn" onClick={() => navigate('/marketplace')}>
-        <span className="opt-icon">🛒</span>
-        <span>Buy &amp; Sell Store</span>
-    </button>
+                    <button className="option-btn" onClick={() => navigate('/marketplace')}>
+                        <span className="opt-icon">🛒</span>
+                        <span>Buy &amp; Sell Store</span>
+                    </button>
 
-    <button className="option-btn" onClick={() => navigate('/rent')}>
-        <span className="opt-icon">🏠</span>
-        <span>Rent Marketplace</span>
-    </button>
+                    <button className="option-btn" onClick={() => navigate('/rent')}>
+                        <span className="opt-icon">🏠</span>
+                        <span>Rent Marketplace</span>
+                    </button>
 
-    <button className="option-btn" onClick={() => navigate('/lostfound')}>
-        <span className="opt-icon">🔍</span>
-        <span>Lost &amp; Found</span>
-    </button>
+                    <button className="option-btn" onClick={() => navigate('/lostfound')}>
+                        <span className="opt-icon">🔍</span>
+                        <span>Lost &amp; Found</span>
+                    </button>
 
-    <button className="option-btn" onClick={() => navigate('/wishlist')}>
-        <span className="opt-icon">❤️</span>
-        <span>My Wishlist</span>
-    </button>
-</div>
+                    <button className="option-btn" onClick={() => navigate('/wishlist')}>
+                        <span className="opt-icon">❤️</span>
+                        <span>My Wishlist</span>
+                    </button>
+
+                    <button className="option-btn" onClick={() => navigate('/orders')}>
+                        <span className="opt-icon">📦</span>
+                        <span>Orders &amp; Tracking</span>
+                    </button>
+
+                    {(displayUser?.role === 'admin' || displayUser?.username === 'admin') && (
+                        <button className="option-btn" onClick={() => navigate('/admin')}>
+                            <span className="opt-icon">🛡️</span>
+                            <span>Admin Panel</span>
+                        </button>
+                    )}
+                </div>
 
                 {/* Private Section Navigation Tabs */}
                 <div className="profile-section-nav">
@@ -442,6 +624,13 @@ const Profile = () => {
                         onClick={() => setActiveSection('messages')}
                     >
                         💬 Private Messages ({chats.length})
+                    </button>
+
+                    <button
+                        className={`sec-nav-btn ${activeSection === 'reviews' ? 'active' : ''}`}
+                        onClick={() => setActiveSection('reviews')}
+                    >
+                        ⭐ Reviews Received ({reviews.length})
                     </button>
                 </div>
 
@@ -846,6 +1035,52 @@ const Profile = () => {
                                 </div>
                             )}
                         </div>
+                    </div>
+                )}
+
+                {/* ════════════ SECTION 4: REVIEWS RECEIVED ════════════ */}
+                {activeSection === 'reviews' && (
+                    <div className="history" style={{ padding: '24px' }}>
+                        <div className="history-header" style={{ marginBottom: '20px' }}>
+                            <h2>⭐ Reviews &amp; Ratings Received</h2>
+                            <span className="activity-count-tag">{reviews.length} reviews</span>
+                        </div>
+
+                        {reviews.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                                <span style={{ fontSize: '2.5rem' }}>⭐</span>
+                                <h3 style={{ margin: '12px 0 6px', color: '#1e293b' }}>No reviews yet</h3>
+                                <p>Once you complete sales or rentals, buyers can leave 5-star ratings and reviews here!</p>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                                {reviews.map((r) => (
+                                    <div
+                                        key={r._id || r.id}
+                                        style={{
+                                            background: '#fff',
+                                            border: '1px solid #e2e8f0',
+                                            borderRadius: '14px',
+                                            padding: '16px 20px',
+                                            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <strong style={{ color: '#0f172a' }}>@{r.reviewerUsername}</strong>
+                                                <StarRating value={r.rating} size="0.9rem" showNumber={false} />
+                                            </div>
+                                            <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                                                {new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                            </span>
+                                        </div>
+                                        <p style={{ margin: 0, color: '#334155', fontSize: '0.92rem', lineHeight: 1.5 }}>
+                                            {r.comment || 'No written feedback provided.'}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

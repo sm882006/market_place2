@@ -34,6 +34,28 @@ const LostFound = () => {
         declaredTrue: false,
     });
 
+    // Smart Matching State
+    const [smartMatches, setSmartMatches] = useState(null);
+    const [loadingMatches, setLoadingMatches] = useState(false);
+
+    const fetchSmartMatches = async (item) => {
+        try {
+            setLoadingMatches(true);
+            const res = await fetch(`/api/lostfound/matches/${item.id}`);
+            if (res.ok) {
+                const data = await res.json();
+                setSmartMatches(data);
+            } else {
+                alert('No opposing match candidates found.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Error finding smart matches.');
+        } finally {
+            setLoadingMatches(false);
+        }
+    };
+
     // Login prompt modal state
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [blockedAction, setBlockedAction] = useState(null);
@@ -373,9 +395,170 @@ return matchSearch && matchLocation && matchStatus;
                                         Claimed
                                     </button>
                                 )}
+
+                                <button
+                                    onClick={() => fetchSmartMatches(item)}
+                                    style={{
+                                        padding: '9px 12px',
+                                        borderRadius: '10px',
+                                        background: '#eff6ff',
+                                        color: '#1d4ed8',
+                                        border: '1px solid #bfdbfe',
+                                        cursor: 'pointer',
+                                        fontWeight: '600',
+                                        fontSize: '0.82rem'
+                                    }}
+                                    title="Find automated smart matches"
+                                >
+                                    ✨ Matches
+                                </button>
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* ── SMART MATCHES MODAL ── */}
+            {smartMatches && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(15, 23, 42, 0.5)',
+                        backdropFilter: 'blur(12px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 2000,
+                        padding: '16px',
+                    }}
+                    onClick={() => setSmartMatches(null)}
+                >
+                    <div
+                        style={{
+                            background: '#fff',
+                            borderRadius: '24px',
+                            maxWidth: '600px',
+                            width: '100%',
+                            maxHeight: '90vh',
+                            overflowY: 'auto',
+                            padding: '28px',
+                            boxShadow: '0 25px 60px rgba(0,0,0,0.2)',
+                            position: 'relative',
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            style={{
+                                position: 'absolute',
+                                top: '18px',
+                                right: '18px',
+                                border: 'none',
+                                background: '#f1f5f9',
+                                borderRadius: '50%',
+                                width: '32px',
+                                height: '32px',
+                                cursor: 'pointer',
+                                fontSize: '18px',
+                            }}
+                            onClick={() => setSmartMatches(null)}
+                        >
+                            ×
+                        </button>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                            <span style={{ fontSize: '1.5rem' }}>✨</span>
+                            <h2 style={{ margin: 0, fontSize: '1.3rem', color: '#0f172a' }}>
+                                Smart AI Matching Engine
+                            </h2>
+                        </div>
+                        <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '20px' }}>
+                            Matching "<strong>{smartMatches.targetItem?.title}</strong>" with reported {smartMatches.targetItem?.type === 'lost' ? 'found' : 'lost'} items across campus based on category, location, and keywords.
+                        </p>
+
+                        {smartMatches.matches.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '40px 20px', background: '#f8fafc', borderRadius: '16px' }}>
+                                <span style={{ fontSize: '2.5rem' }}>🔍</span>
+                                <h3 style={{ margin: '10px 0 6px', color: '#1e293b' }}>No Strong Matches Yet</h3>
+                                <p style={{ color: '#64748b', fontSize: '0.88rem' }}>
+                                    We compared against all existing reports and found no high-confidence overlaps. As more students post items, our match engine scans automatically.
+                                </p>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                                {smartMatches.matches.map((m, idx) => (
+                                    <div
+                                        key={idx}
+                                        style={{
+                                            background: '#f8fafc',
+                                            border: '1px solid #e2e8f0',
+                                            borderRadius: '16px',
+                                            padding: '16px',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: '8px',
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <strong style={{ fontSize: '1.05rem', color: '#0f172a' }}>{m.item.title}</strong>
+                                            <span
+                                                style={{
+                                                    background: m.matchScore >= 70 ? '#dcfce7' : '#fef3c7',
+                                                    color: m.matchScore >= 70 ? '#15803d' : '#b45309',
+                                                    padding: '3px 8px',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.78rem',
+                                                    fontWeight: 700,
+                                                }}
+                                            >
+                                                {m.matchScore}% Match
+                                            </span>
+                                        </div>
+                                        <div style={{ fontSize: '0.85rem', color: '#475569' }}>
+                                            📍 {m.item.location} • 📅 {new Date(m.item.date).toLocaleDateString('en-IN')}
+                                        </div>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                            {m.reasons.map((r, rIdx) => (
+                                                <span
+                                                    key={rIdx}
+                                                    style={{
+                                                        background: '#e0f2fe',
+                                                        color: '#0369a1',
+                                                        fontSize: '0.75rem',
+                                                        padding: '2px 8px',
+                                                        borderRadius: '6px',
+                                                        fontWeight: 600,
+                                                    }}
+                                                >
+                                                    ✓ {r}
+                                                </span>
+                                            ))}
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
+                                            <button
+                                                onClick={() => {
+                                                    setSmartMatches(null);
+                                                    openClaimModal(m.item);
+                                                }}
+                                                style={{
+                                                    padding: '6px 14px',
+                                                    background: '#0284c7',
+                                                    color: '#fff',
+                                                    border: 'none',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.85rem',
+                                                    fontWeight: 600,
+                                                    cursor: 'pointer',
+                                                }}
+                                            >
+                                                View / Claim Matched Item →
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
 

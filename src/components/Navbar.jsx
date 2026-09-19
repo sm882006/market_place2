@@ -8,6 +8,7 @@ const navItems = [
   { label: "Rent", path: "/rent" },
   { label: "Lost & Found", path: "/lostfound" },
   { label: "Wishlist", path: "/wishlist" },
+  { label: "Orders", path: "/orders" },
 ];
 
 function Navbar() {
@@ -16,6 +17,8 @@ function Navbar() {
 
   const getNavClass = ({ isActive }) =>
     `navbar-link ${isActive ? "active" : ""}`;
+
+  const isAdmin = user?.role === 'admin' || user?.username === 'admin';
 
   return (
     <header className="navbar">
@@ -40,6 +43,11 @@ function Navbar() {
               {item.label}
             </NavLink>
           ))}
+          {isAdmin && (
+            <NavLink to="/admin" className={getNavClass} style={{ color: '#7c3aed', fontWeight: '700' }}>
+              🛡️ Admin
+            </NavLink>
+          )}
         </nav>
 
         {/* Right Actions */}

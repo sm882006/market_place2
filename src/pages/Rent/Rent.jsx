@@ -14,9 +14,11 @@ const Rent = () => {
   const [category, setCategory] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const [rentDays, setRentDays] = useState(1);
+  const [startDate, setStartDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [requestNote, setRequestNote] = useState('');
   const [isRequesting, setIsRequesting] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [rentSuccessData, setRentSuccessData] = useState(null);
   // Wishlist state synced with localStorage
   const [wishlist, setWishlist] = useState(() => {
     try {
@@ -91,6 +93,7 @@ const Rent = () => {
         },
         body: JSON.stringify({
           days: rentDays,
+          startDate,
           contact: user?.email || '',
           message: requestNote || `Hi @${selectedItem.ownerUsername}, I would like to rent "${selectedItem.name}" for ${rentDays} day(s).`
         })
@@ -382,23 +385,45 @@ const Rent = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                   <div>
                     <label style={{ fontSize: '12px', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '4px' }}>
-                      Number of Days:
+                      📅 Start Date:
+                    </label>
+                    <input
+                      type="date"
+                      min={new Date().toISOString().split('T')[0]}
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '4px' }}>
+                      ⏱️ Duration (Days):
                     </label>
                     <input
                       type="number"
                       min="1"
                       value={rentDays}
                       onChange={(e) => setRentDays(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
                     />
                   </div>
-                  <div>
-                    <label style={{ fontSize: '12px', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '4px' }}>
-                      Total Estimated Cost:
-                    </label>
-                    <div style={{ fontSize: '16px', fontWeight: '800', color: '#10b981', paddingTop: '6px' }}>
+                </div>
+
+                {/* Price Breakdown */}
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '10px 14px', marginBottom: '14px', fontSize: '13px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <span style={{ color: '#64748b' }}>Rent ({rentDays} day{rentDays > 1 ? 's' : ''} × ₹{selectedItem.rentPerDay}):</span>
+                    <strong style={{ color: '#1e293b' }}>₹{selectedItem.rentPerDay * rentDays}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <span style={{ color: '#64748b' }}>Refundable Security Deposit:</span>
+                    <strong style={{ color: '#1e293b' }}>₹{selectedItem.deposit || 0}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #cbd5e1', paddingTop: '6px', fontSize: '14px' }}>
+                    <span style={{ fontWeight: '700', color: '#0f172a' }}>Total Payable:</span>
+                    <strong style={{ color: '#10b981', fontSize: '16px' }}>
                       ₹{(selectedItem.rentPerDay * rentDays) + (selectedItem.deposit || 0)}
-                    </div>
+                    </strong>
                   </div>
                 </div>
 
@@ -408,7 +433,7 @@ const Rent = () => {
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Need this for upcoming lab exam on Thursday"
+                    placeholder="e.g. Need this for upcoming lab practical on Thursday"
                     value={requestNote}
                     onChange={(e) => setRequestNote(e.target.value)}
                     style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
