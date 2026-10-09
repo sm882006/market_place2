@@ -1,0 +1,18 @@
+[
+  {
+    "id": "lf_1",
+    "name": "College ID Card & Lanyard",
+    "location": "Library Reading Hall",
+    "date": "2026-06-13",
+    "category": "ID Cards & Wallets",
+    "description": "Found blue PICT student ID card on table 14 near the windows.",
+    "contact": "9876543210",
+    "photo": "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?q=80&w=400&auto=format&fit=crop",
+    "status": "unclaimed",
+    "reportedById": "1781077082645",
+    "reportedByUsername": "utk",
+    "claimedById": null,
+    "claimedByUsername": null,
+    "createdAt": "2026-06-13T10:30:00.000Z"
+  }
+]

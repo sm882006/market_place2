@@ -1,0 +1,22 @@
+import { Router } from 'express';
+import authRoutes from './auth.routes.js';
+import productsRoutes from './products.routes.js';
+import rentsRoutes from './rents.routes.js';
+import lostfoundRoutes from './lostfound.routes.js';
+import ordersRoutes from './orders.routes.js';
+import notificationsRoutes from './notifications.routes.js';
+import chatsRoutes from './chats.routes.js';
+import activityRoutes from './activity.routes.js';
+import healthRoutes from './health.routes.js';
+
+const router = Router();
+router.use(authRoutes);
+router.use(productsRoutes);
+router.use(rentsRoutes);
+router.use(lostfoundRoutes);
+router.use(ordersRoutes);
+router.use(notificationsRoutes);
+router.use(chatsRoutes);
+router.use(activityRoutes);
+router.use(healthRoutes);
+export default router;
