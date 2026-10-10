@@ -7,7 +7,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import { connectDB } from './config/db.js';
-import { autoMigrateData } from './scripts/migrateData.js';
 import { setupSocketHandlers } from './sockets/chatSocket.js';
 import { verifyToken } from './middleware/auth.js';
 
@@ -29,6 +28,7 @@ import Product from './models/Product.js';
 import Rental from './models/Rental.js';
 import Order from './models/Order.js';
 import LostFound from './models/LostFound.js';
+import mongoose from 'mongoose';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -266,9 +266,10 @@ app.get('/api/user/activity', verifyToken, async (req, res) => {
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    database: 'MongoDB',
+  const connected = mongoose.connection.readyState === 1;
+  res.status(connected ? 200 : 503).json({
+    status: connected ? 'ok' : 'unavailable',
+    database: connected ? 'connected' : 'disconnected',
     time: new Date().toISOString(),
   });
 });
@@ -289,7 +290,6 @@ app.use((req, res, next) => {
 // Connect to DB and start server
 const startServer = async () => {
   await connectDB();
-  await autoMigrateData();
 
   server.listen(PORT, () => {
     console.log(`\n==================================================`);
@@ -301,4 +301,7 @@ const startServer = async () => {
   });
 };
 
-startServer();
+startServer().catch((error) => {
+  console.error('[Startup] Unable to start server:', error.message);
+  process.exitCode = 1;
+});

@@ -55,3 +55,4 @@ Desktop.ini
 .eslintcache
 .cache/
 coverage/
+server/*.json

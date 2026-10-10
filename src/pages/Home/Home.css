@@ -689,6 +689,35 @@
   margin-bottom: 28px;
 }
 
+.showcase-status {
+  margin-bottom: 28px;
+  padding: 38px 24px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.62);
+  color: #334155;
+  text-align: center;
+}
+
+.showcase-status button {
+  margin-top: 10px;
+  padding: 9px 18px;
+  border: 0;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #fff;
+  cursor: pointer;
+}
+
+.card-photo-placeholder {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  font-size: 3rem;
+  background: linear-gradient(135deg, #dbeafe, #e0e7ff);
+}
+
 /* Showcase Glass Card */
 .showcase-glass-card {
   background: rgba(255, 255, 255, 0.65);

@@ -23,7 +23,7 @@ const toLfJson = (doc) => {
 // GET /api/lostfound
 router.get('/', optionalAuth, async (req, res) => {
   try {
-    const { type, category, status, search } = req.query;
+    const { type, category, status, search, limit } = req.query;
     const query = {};
 
     if (type && type !== 'all') {
@@ -52,7 +52,8 @@ router.get('/', optionalAuth, async (req, res) => {
       ];
     }
 
-    const items = await LostFound.find(query).sort({ createdAt: -1 });
+    const resultLimit = limit ? Math.min(Math.max(Number(limit) || 0, 0), 100) : 0;
+    const items = await LostFound.find(query).sort({ createdAt: -1 }).limit(resultLimit);
     return res.json(items.map(toLfJson));
   } catch (err) {
     console.error('[LOSTFOUND] Error fetching items:', err);

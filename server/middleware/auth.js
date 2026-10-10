@@ -2,10 +2,10 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  console.warn('[AUTH WARNING] JWT_SECRET is not set in environment! Fallback temporary secret active.');
+if (!JWT_SECRET || JWT_SECRET.length < 32 || JWT_SECRET.startsWith('replace_with_')) {
+  throw new Error('Set JWT_SECRET in .env to a unique value of at least 32 characters.');
 }
-const SECRET_KEY = JWT_SECRET || 'pict_campus_marketplace_super_secret_jwt_key_2026';
+const SECRET_KEY = JWT_SECRET;
 
 export const verifyToken = async (req, res, next) => {
   try {

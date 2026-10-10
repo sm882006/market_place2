@@ -50,7 +50,7 @@ export const handleSignup = async (req, res) => {
       collegeRollNo: collegeRollNo || '',
       department: department || '',
       phone: phone || '',
-      role: trimmedUsername === 'admin' ? 'admin' : 'student',
+      role: 'student',
       isVerified: isStudentEmail,
     });
 

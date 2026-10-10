@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import LoginPromptModal from '../../components/LoginPromptModal';
@@ -12,158 +12,116 @@ const TRENDING_SEARCHES = [
   'Arduino Uno',
 ];
 
-const SHOWCASE_DATA = {
-  marketplace: [
-    {
-      id: 'prod_1',
-      title: 'Casio FX-991EX ClassWiz Calculator',
-      category: 'Textbooks & Tech',
-      price: '₹750',
-      originalPrice: '₹1,400',
-      badge: '45% OFF',
-      condition: 'Like New • 1 Sem Used',
-      location: 'F-Building Quad',
-      owner: 'Rohan M. (TE IT)',
-      photo: 'https://images.unsplash.com/photo-1594980596870-8aa52a78d8cd?q=80&w=600&auto=format&fit=crop',
-      actionText: 'Quick Offer',
-      target: '/marketplace',
-    },
-    {
-      id: 'prod_2',
-      title: 'SPPU Core Engineering Books Bundle',
-      category: 'Textbooks',
-      price: '₹1,100',
-      originalPrice: '₹2,200',
-      badge: '4 BOOKS BUNDLE',
-      condition: 'Good • Clean Notes',
-      location: 'Central Library Area',
-      owner: 'Sneha K. (BE EnTC)',
-      photo: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=600&auto=format&fit=crop',
-      actionText: 'Buy Now',
-      target: '/marketplace',
-    },
-    {
-      id: 'prod_3',
-      title: 'Firefox Mountain Cycle + Lock & Helmet',
-      category: 'Mobility',
-      price: '₹3,200',
-      originalPrice: '₹6,500',
-      badge: 'MOVING OUT SALE',
-      condition: 'Serviced Last Month',
-      location: 'Hostel 2 Parking',
-      owner: 'Aditya P. (BE Comp)',
-      photo: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?q=80&w=600&auto=format&fit=crop',
-      actionText: 'Inspect Cycle',
-      target: '/marketplace',
-    },
-    {
-      id: 'prod_4',
-      title: 'Arduino & IoT Starter Kit (ESP32 + Sensors)',
-      category: 'Electronics',
-      price: '₹850',
-      originalPrice: '₹1,800',
-      badge: '52% OFF',
-      condition: 'Tested & Working',
-      location: 'Lab 304 Quad',
-      owner: 'Amey D. (TE Comp)',
-      photo: 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=600&auto=format&fit=crop',
-      actionText: 'Kit Details',
-      target: '/marketplace',
-    },
-  ],
-  rentals: [
-    {
-      id: 'rent_1',
-      title: 'Omega Engineering Drawing Drafter & Board',
-      category: 'Graphics Essential',
-      price: '₹30 / day',
-      periodPrice: '₹180 / month',
-      badge: 'FE MUST-HAVE',
-      condition: 'Deposit: ₹300 (Refundable)',
-      location: 'Mechanical Dept Foyer',
-      owner: 'Priya N. (FE Mech)',
-      photo: 'https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?q=80&w=600&auto=format&fit=crop',
-      actionText: 'Reserve Gear',
-      target: '/rent',
-    },
-    {
-      id: 'rent_2',
-      title: 'Raspberry Pi 4 Model B (4GB) + Touchscreen',
-      category: 'Capstone Tech',
-      price: '₹120 / week',
-      periodPrice: '₹400 / month',
-      badge: 'READY FOR DEMO',
-      condition: 'Deposit: ₹1,000 (Refundable)',
-      location: 'Computer Lab 208',
-      owner: 'Rahul V. (BE Comp)',
-      photo: 'https://images.unsplash.com/photo-1517055729441-db3a4e399b4b?q=80&w=600&auto=format&fit=crop',
-      actionText: 'Reserve Pi',
-      target: '/rent',
-    },
-    {
-      id: 'rent_3',
-      title: 'Clean White Lab Coat & Safety Goggles',
-      category: 'Lab Gear',
-      price: '₹20 / day',
-      periodPrice: '₹75 / practical week',
-      badge: 'FRESHLY WASHED',
-      condition: 'Deposit: ₹150 (Refundable)',
-      location: 'Chemistry Lab Quad',
-      owner: 'Ananya P. (FE IT)',
-      photo: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=600&auto=format&fit=crop',
-      actionText: 'Borrow Coat',
-      target: '/rent',
-    },
-  ],
-  lostfound: [
-    {
-      id: 'lf_1',
-      title: 'Blue boAt Rockerz Earbuds Case',
-      category: 'Lost Item',
-      price: 'LOST',
-      badge: '₹200 REWARD',
-      condition: 'Dropped near Canteen table #4',
-      location: 'Main Canteen Area',
-      owner: 'Aditya K. (SE IT)',
-      photo: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?q=80&w=600&auto=format&fit=crop',
-      actionText: 'I Found This',
-      target: '/lostfound',
-    },
-    {
-      id: 'lf_2',
-      title: 'Silver Titan Metal Analog Watch',
-      category: 'Found Item',
-      price: 'FOUND',
-      badge: 'SAFE IN LAB',
-      condition: 'Kept with Lab Attendant Mr. Patil',
-      location: 'Computer Lab 208',
-      owner: 'Lab 208 Incharge',
-      photo: 'https://images.unsplash.com/photo-1524805444758-089113d48a6d?q=80&w=600&auto=format&fit=crop',
-      actionText: 'Claim Watch',
-      target: '/lostfound',
-    },
-    {
-      id: 'lf_3',
-      title: 'Data Structures Spiral Handwritten Notes',
-      category: 'Found Item',
-      price: 'FOUND',
-      badge: 'AT CIRCULATION',
-      condition: 'Found on 2nd Floor Reading Hall',
-      location: 'Central Library Desk',
-      owner: 'Tanvi G. (TE Comp)',
-      photo: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=600&auto=format&fit=crop',
-      actionText: 'Verify Notes',
-      target: '/lostfound',
-    },
-  ],
+const SHOWCASE_ENDPOINTS = {
+  marketplace: '/api/products?status=available&sortBy=date_desc&limit=4',
+  rentals: '/api/rents?status=available&sortBy=date_desc&limit=4',
+  lostfound: '/api/lostfound?status=unclaimed&limit=4',
 };
 
+const formatPrice = (amount) => `₹${Number(amount || 0).toLocaleString('en-IN')}`;
+
+const formatShowcaseItem = (record, tab) => {
+  const id = record.id || record._id;
+  if (tab === 'marketplace') {
+    const discount = record.originalPrice > record.price
+      ? `${Math.round((1 - record.price / record.originalPrice) * 100)}% OFF`
+      : 'FOR SALE';
+    return {
+      id,
+      title: record.name,
+      category: record.category || 'Marketplace',
+      price: formatPrice(record.price),
+      originalPrice: record.originalPrice ? formatPrice(record.originalPrice) : null,
+      badge: discount,
+      condition: record.condition || 'Available',
+      location: record.location || 'PICT Campus',
+      owner: record.sellerUsername || 'Student seller',
+      photo: record.photo || record.photos?.[0],
+      actionText: 'View item',
+      target: `/marketplace/${id}`,
+    };
+  }
+  if (tab === 'rentals') {
+    return {
+      id,
+      title: record.name,
+      category: record.category || 'Rental',
+      price: `${formatPrice(record.rentPerDay)} / day`,
+      badge: 'FOR RENT',
+      condition: `Deposit: ${formatPrice(record.deposit)}`,
+      location: record.location || 'PICT Campus',
+      owner: record.ownerUsername || 'Student owner',
+      photo: record.photo || record.photos?.[0],
+      actionText: 'View rental',
+      target: '/rent',
+    };
+  }
+  return {
+    id,
+    title: record.title || record.name,
+    category: record.category || 'Lost & Found',
+    price: (record.type || 'found').toUpperCase(),
+    badge: record.type === 'lost' ? 'LOST ITEM' : 'FOUND ITEM',
+    condition: record.description || 'See report for details',
+    location: record.location || 'PICT Campus',
+    owner: record.reportedByUsername || record.reporterUsername || 'Student reporter',
+    photo: record.photo,
+    actionText: 'View report',
+    target: '/lostfound',
+  };
+};
+
+const uniqueFirstFour = (records) => {
+  const seen = new Set();
+  return records.filter((record) => {
+    const id = record.id || record._id;
+    if (!id || seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  }).slice(0, 4);
+};
 const Home = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { token, isAuthenticated } = useAuth();
 
   const [activeTab, setActiveTab] = useState('marketplace');
   const [searchInput, setSearchInput] = useState('');
+  const [showcase, setShowcase] = useState({ marketplace: [], rentals: [], lostfound: [] });
+  const [showcaseErrors, setShowcaseErrors] = useState({});
+  const [showcaseLoading, setShowcaseLoading] = useState(true);
+  const [refreshShowcase, setRefreshShowcase] = useState(0);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    setShowcaseLoading(true);
+
+    Promise.allSettled(
+      Object.entries(SHOWCASE_ENDPOINTS).map(async ([tab, endpoint]) => {
+        const response = await fetch(endpoint, { headers, signal: controller.signal });
+        if (!response.ok) throw new Error(`Unable to load ${tab}`);
+        const records = await response.json();
+        if (!Array.isArray(records)) throw new Error(`Invalid ${tab} response`);
+        return uniqueFirstFour(records);
+      })
+    ).then((results) => {
+      if (controller.signal.aborted) return;
+      const nextShowcase = {};
+      const nextErrors = {};
+      Object.keys(SHOWCASE_ENDPOINTS).forEach((tab, index) => {
+        const result = results[index];
+        nextShowcase[tab] = result.status === 'fulfilled' ? result.value : [];
+        nextErrors[tab] = result.status === 'rejected';
+      });
+      setShowcase(nextShowcase);
+      setShowcaseErrors(nextErrors);
+      setShowcaseLoading(false);
+    });
+
+    return () => controller.abort();
+  }, [token, refreshShowcase]);
+
+  const visibleItems = showcase[activeTab].map((record) => formatShowcaseItem(record, activeTab));
 
   // Login prompt modal state for unauthenticated users
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -311,7 +269,7 @@ const Home = () => {
               </p>
               <div className="service-meta-footer">
                 <span className="service-status-pill green">
-                  <span className="status-dot green" /> 85+ Active Listings
+                  <span className="status-dot green" /> Latest Campus Listings
                 </span>
                 <span className="card-cta-link">Browse Marketplace →</span>
               </div>
@@ -374,7 +332,7 @@ const Home = () => {
           <div className="showcase-header-bar">
             <div className="showcase-header-text">
               <h2 className="showcase-title">Live on Campus</h2>
-              <p className="showcase-subtitle">Verified peer listings across all PICT departments</p>
+              <p className="showcase-subtitle">Latest listings from the campus marketplace</p>
             </div>
 
             {/* Glass Segmented Switcher */}
@@ -384,37 +342,51 @@ const Home = () => {
                 className={`glass-tab-btn ${activeTab === 'marketplace' ? 'active' : ''}`}
                 onClick={() => setActiveTab('marketplace')}
               >
-                🛍️ Buy &amp; Sell ({SHOWCASE_DATA.marketplace.length})
+                🛍️ Buy &amp; Sell ({showcaseLoading || showcaseErrors.marketplace ? '…' : showcase.marketplace.length})
               </button>
               <button
                 type="button"
                 className={`glass-tab-btn ${activeTab === 'rentals' ? 'active' : ''}`}
                 onClick={() => setActiveTab('rentals')}
               >
-                ⏱️ Gear for Rent ({SHOWCASE_DATA.rentals.length})
+                ⏱️ Gear for Rent ({showcaseLoading || showcaseErrors.rentals ? '…' : showcase.rentals.length})
               </button>
               <button
                 type="button"
                 className={`glass-tab-btn ${activeTab === 'lostfound' ? 'active' : ''}`}
                 onClick={() => setActiveTab('lostfound')}
               >
-                🧭 Lost &amp; Found ({SHOWCASE_DATA.lostfound.length})
+                🧭 Lost &amp; Found ({showcaseLoading || showcaseErrors.lostfound ? '…' : showcase.lostfound.length})
               </button>
             </div>
           </div>
 
           {/* Cards Grid for Selected Tab */}
+          {showcaseLoading ? (
+            <div className="showcase-status" role="status">Loading the latest campus listings…</div>
+          ) : showcaseErrors[activeTab] ? (
+            <div className="showcase-status" role="alert">
+              <p>Live listings are temporarily unavailable.</p>
+              <button type="button" onClick={() => setRefreshShowcase((count) => count + 1)}>Try again</button>
+            </div>
+          ) : visibleItems.length === 0 ? (
+            <div className="showcase-status" role="status">No listings in this section yet.</div>
+          ) : (
           <div className="showcase-cards-grid">
-            {SHOWCASE_DATA[activeTab].map((item) => (
+            {visibleItems.map((item) => (
               <div
                 key={item.id}
                 className="showcase-glass-card"
                 onClick={() => handleServiceClick(item.target, item.title, '📦')}
               >
                 <div className="card-image-wrap">
-                  <img src={item.photo} alt={item.title} className="card-photo" loading="lazy" />
+                  {item.photo ? (
+                    <img src={item.photo} alt={item.title} className="card-photo" loading="lazy" />
+                  ) : (
+                    <div className="card-photo-placeholder" aria-hidden="true">📦</div>
+                  )}
                   <span className="card-badge-pill">{item.badge}</span>
-                  <button
+                  {activeTab !== 'lostfound' && <button
                     type="button"
                     className={`wishlist-btn ${wishlist.includes(item.id) ? 'active' : ''}`}
                     onClick={(e) => {
@@ -425,7 +397,7 @@ const Home = () => {
                     title={wishlist.includes(item.id) ? 'Remove from wishlist' : 'Add to wishlist'}
                   >
                     {wishlist.includes(item.id) ? '♥' : '♡'}
-                  </button>
+                  </button>}
                   <div className="card-image-overlay" />
                 </div>
 
@@ -468,6 +440,7 @@ const Home = () => {
               </div>
             ))}
           </div>
+          )}
 
           {/* Link to Full Hub */}
           <div className="showcase-bottom-cta">
