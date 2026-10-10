@@ -92,6 +92,14 @@ router.post('/:chatId/message', verifyToken, async (req, res) => {
     chat.lastMessage = newMsg.text;
     chat.lastMessageAt = new Date();
     await chat.save();
+    const savedMsg = chat.messages[chat.messages.length - 1];
+
+    if (recipient) {
+      req.io?.to(`user_${recipient}`).emit('new_message', {
+        chatId: chat._id.toString(),
+        message: savedMsg.toObject(),
+      });
+    }
 
     if (recipient) {
       await Notification.create({

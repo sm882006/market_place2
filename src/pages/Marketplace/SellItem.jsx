@@ -70,8 +70,7 @@ const SellItem = () => {
 
       const data = await res.json();
       if (res.ok) {
-        alert('🎉 Item listed successfully! Your activity has been updated.');
-        navigate('/profile');
+        navigate('/profile?tab=activity');
       } else {
         setError(data.message || 'Failed to list product.');
       }

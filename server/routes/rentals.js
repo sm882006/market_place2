@@ -394,6 +394,7 @@ router.post('/:id/approve-rent', verifyToken, async (req, res) => {
     // Find Order
     const order = await Order.findOne({
       itemId: rental._id.toString(),
+      buyerUsername: renterUsername,
       status: 'pending',
     }).sort({ createdAt: -1 });
 
@@ -461,6 +462,10 @@ router.post('/:id/reject-rent', verifyToken, async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized to reject this rental' });
     }
 
+    if (rental.status !== 'pending' || !rental.pendingRenterUsername) {
+      return res.status(400).json({ message: 'No pending rental request to reject.' });
+    }
+
     const rejectedRenter = rental.pendingRenterUsername;
 
     rental.status = 'available';
@@ -471,6 +476,7 @@ router.post('/:id/reject-rent', verifyToken, async (req, res) => {
 
     const order = await Order.findOne({
       itemId: rental._id.toString(),
+      buyerUsername: rejectedRenter,
       status: 'pending',
     }).sort({ createdAt: -1 });
 

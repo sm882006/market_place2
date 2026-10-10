@@ -95,6 +95,14 @@ router.patch('/:id/status', verifyToken, async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized to modify this order' });
     }
 
+    if (order.orderType === 'buy') {
+      return res.status(400).json({ message: 'Sale requests must be accepted or declined from the request controls.' });
+    }
+    if (status !== 'returned' || order.status !== 'approved' ||
+        (order.sellerUsername !== req.user.username && req.user.role !== 'admin')) {
+      return res.status(400).json({ message: 'Only the rental owner can mark an approved rental as returned.' });
+    }
+
     order.status = status;
     order.statusTimeline.push({
       status,

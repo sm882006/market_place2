@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import StarRating from '../../components/StarRating';
 import { getSocket } from '../../services/socket';
@@ -10,6 +10,7 @@ const API = '';
 const Profile = () => {
     const { user, token, logout, isAuthenticated, loading } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
 
     const [profileData, setProfileData] = useState(null);
     const [activities, setActivities] = useState([]);
@@ -38,7 +39,10 @@ const Profile = () => {
     const [messages, setMessages] = useState([]);
     const [chatText, setChatText] = useState('');
     const [sendingMsg, setSendingMsg] = useState(false);
+    const [chatError, setChatError] = useState('');
     const messagesEndRef = useRef(null);
+    const activeChatIdRef = useRef(null);
+    const activityLoadedRef = useRef(false);
 
     // Redirect if not logged in
     useEffect(() => {
@@ -51,9 +55,10 @@ const Profile = () => {
     const loadUserActivity = useCallback(async () => {
         if (!token) return;
         try {
-            setLoadingActivity(true);
+            if (!activityLoadedRef.current) setLoadingActivity(true);
             const res = await fetch(`${API}/api/user/activity`, {
                 headers: { Authorization: `Bearer ${token}` },
+                cache: 'no-store',
             });
             if (res.ok) {
                 const data = await res.json();
@@ -62,6 +67,7 @@ const Profile = () => {
         } catch (err) {
             console.error('Error fetching activity:', err);
         } finally {
+            activityLoadedRef.current = true;
             setLoadingActivity(false);
         }
     }, [token]);
@@ -98,6 +104,11 @@ const Profile = () => {
             console.error('Error fetching chats:', err);
         }
     }, [token]);
+
+    useEffect(() => {
+        const tab = searchParams.get('tab');
+        if (['activity', 'notifications', 'messages', 'reviews'].includes(tab)) setActiveSection(tab);
+    }, [searchParams]);
 
     // Fetch reviews received
     const loadReviews = useCallback(async () => {
@@ -198,8 +209,8 @@ const Profile = () => {
 
             const handleNewMsg = (data) => {
                 loadChats();
-                if (activeChat && activeChat.id === data.chatId) {
-                    setMessages((prev) => [...prev, data.message]);
+                if (activeChatIdRef.current === data.chatId && data.message) {
+                    setMessages((prev) => prev.some((m) => m._id === data.message._id) ? prev : [...prev, data.message]);
                 }
             };
 
@@ -210,20 +221,33 @@ const Profile = () => {
             const timer = setInterval(() => {
                 loadNotifications();
                 loadChats();
+                loadUserActivity();
             }, 12000);
+
+            const refreshOnFocus = () => {
+                loadUserActivity();
+                loadNotifications();
+                loadChats();
+            };
+            window.addEventListener('focus', refreshOnFocus);
 
             return () => {
                 clearInterval(timer);
+                window.removeEventListener('focus', refreshOnFocus);
                 socket.off('new_notification', handleNewNotif);
                 socket.off('new_message', handleNewMsg);
             };
         }
-    }, [token, user?.username, loadUserActivity, loadNotifications, loadChats, loadReviews, activeChat]);
+    }, [token, user?.username, loadUserActivity, loadNotifications, loadChats, loadReviews]);
 
     // Load active chat thread messages
     const selectChat = async (chat) => {
         setActiveChat(chat);
+        activeChatIdRef.current = chat.id;
+        setMessages([]);
+        setChatError('');
         setActiveSection('messages');
+        navigate(`/profile?tab=messages&chatId=${chat.id}`, { replace: true });
         if (!token) return;
         try {
             const res = await fetch(`${API}/api/chats/${chat.id}`, {
@@ -231,7 +255,7 @@ const Profile = () => {
             });
             if (res.ok) {
                 const data = await res.json();
-                setMessages(data.messages || []);
+                if (activeChatIdRef.current === chat.id) setMessages(data.messages || []);
                 setTimeout(() => {
                     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
                 }, 100);
@@ -241,11 +265,41 @@ const Profile = () => {
         }
     };
 
+    useEffect(() => {
+        const chatId = searchParams.get('chatId');
+        if (!chatId || !chats.length || activeChatIdRef.current === chatId) return;
+        const match = chats.find((chat) => chat.id === chatId);
+        if (match) selectChat(match);
+    // The URL selects a chat only when its ID changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [chats, searchParams]);
+
+    useEffect(() => {
+        if (!activeChat?.id || !token) return;
+        const timer = setInterval(async () => {
+            if (document.hidden) return;
+            try {
+                const res = await fetch(`${API}/api/chats/${activeChat.id}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                    cache: 'no-store',
+                });
+                if (res.ok && activeChatIdRef.current === activeChat.id) {
+                    const data = await res.json();
+                    setMessages(data.messages || []);
+                }
+            } catch (err) {
+                console.error('Error refreshing chat:', err);
+            }
+        }, 6000);
+        return () => clearInterval(timer);
+    }, [activeChat?.id, token]);
+
     // Send private message
     const handleSendMessage = async (e) => {
         e.preventDefault();
         if (!chatText.trim() || !activeChat || !token) return;
         setSendingMsg(true);
+        setChatError('');
         try {
             const res = await fetch(`${API}/api/chats/${activeChat.id}/message`, {
                 method: 'POST',
@@ -257,15 +311,19 @@ const Profile = () => {
             });
             if (res.ok) {
                 const data = await res.json();
-                setMessages((prev) => [...prev, data.msg]);
+                setMessages(data.messages || []);
                 setChatText('');
                 loadChats();
                 setTimeout(() => {
                     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
                 }, 100);
+            } else {
+                const data = await res.json();
+                setChatError(data.message || 'Could not send your message.');
             }
         } catch (err) {
             console.error('Message error:', err);
+            setChatError('Connection lost. Please try again.');
         } finally {
             setSendingMsg(false);
         }
@@ -274,10 +332,11 @@ const Profile = () => {
     // Helper to open chat associated with notification or activity
     const handleOpenChatForNotifOrActivity = async (item) => {
         setActiveSection('messages');
-        const targetProdId = item.productId || item.rawId;
-        const targetRentId = item.rentId || item.rawId;
+        const targetProdId = item.data?.productId || item.productId || item.rawId;
+        const targetRentId = item.data?.rentalId || item.data?.rentId || item.rentId || item.rawId;
+        const targetChatId = item.data?.chatId || item.chatId;
         
-        let match = chats.find(c => (targetProdId && c.productId === targetProdId) || (targetRentId && c.rentId === targetRentId));
+        let match = chats.find(c => (targetChatId && c.id === String(targetChatId)) || (targetProdId && c.productId === String(targetProdId)) || (targetRentId && c.productId === String(targetRentId)));
         
         if (!match && token) {
             try {
@@ -287,8 +346,7 @@ const Profile = () => {
                 if (res.ok) {
                     const freshChats = await res.json();
                     setChats(freshChats || []);
-                    match = (freshChats || []).find(c => (targetProdId && c.productId === targetProdId) || (targetRentId && c.rentId === targetRentId));
-                    if (!match && freshChats.length > 0) match = freshChats[0];
+                    match = (freshChats || []).find(c => (targetChatId && c.id === String(targetChatId)) || (targetProdId && c.productId === String(targetProdId)) || (targetRentId && c.productId === String(targetRentId)));
                 }
             } catch (err) {
                 console.error('Error refreshing chats:', err);
@@ -297,6 +355,8 @@ const Profile = () => {
         
         if (match) {
             selectChat(match);
+        } else {
+            setChatError('Conversation not found for this request.');
         }
     };
 
@@ -320,6 +380,7 @@ const Profile = () => {
                 loadUserActivity();
                 loadNotifications();
                 loadChats();
+                setNotifications((prev) => prev.filter((n) => String(n.data?.productId || n.data?.rentalId) !== prodId || !['buy_request', 'rent_request'].includes(n.type)));
             } else {
                 alert(data.message || 'Failed to approve request.');
             }
@@ -352,6 +413,7 @@ const Profile = () => {
                 loadUserActivity();
                 loadNotifications();
                 loadChats();
+                setNotifications((prev) => prev.filter((n) => String(n.data?.productId || n.data?.rentalId) !== prodId || !['buy_request', 'rent_request'].includes(n.type)));
             } else {
                 alert(data.message || 'Failed to decline request.');
             }
@@ -824,7 +886,11 @@ const Profile = () => {
                                     const isRentRequest = notif.type === 'rent_request';
                                     const isApproved = notif.type.includes('approved');
                                     const isRejected = notif.type.includes('rejected');
-                                    const isChat = notif.type === 'chat_message';
+                                    const requestItemId = String(notif.data?.productId || notif.data?.rentalId || notif.data?.rentId || notif.productId || notif.rentId || '');
+                                    const requestIsPending = activities.some((act) =>
+                                        act.rawId === requestItemId && act.canApprove &&
+                                        (!notif.data?.requestId || notif.data.requestId === act.requestId)
+                                    );
 
                                     return (
                                         <div
@@ -837,9 +903,9 @@ const Profile = () => {
                                                     <span className={`notif-type-tag ${isBuyRequest ? 'tag-buy' : isRentRequest ? 'tag-rent' : isApproved ? 'tag-approved' : isRejected ? 'tag-rejected' : 'tag-chat'}`}>
                                                         {isBuyRequest ? '📩 Buy Request' : isRentRequest ? '🔑 Rent Request' : isApproved ? '🎉 Request Accepted' : isRejected ? '⚠️ Request Rejected' : '💬 Private Message'}
                                                     </span>
-                                                    {notif.requestId && (
+                                                    {(notif.data?.requestId || notif.requestId) && (
                                                         <span className="notif-request-id-badge" title="Unique Request Identifier">
-                                                            ID: #{notif.requestId}
+                                                            ID: #{notif.data?.requestId || notif.requestId}
                                                         </span>
                                                     )}
                                                 </div>
@@ -851,26 +917,24 @@ const Profile = () => {
                                             <p className="notif-card-message">{notif.message}</p>
 
                                             {/* 3 OPTIONS FOR OWNER ON REQUESTS: ACCEPT, REJECT, CHAT */}
-                                            {(isBuyRequest || isRentRequest) && (
+                                            {(isBuyRequest || isRentRequest) && requestIsPending && (
                                                 <div className="notif-quick-actions request-actions-bar" onClick={(e) => e.stopPropagation()}>
                                                     <button
                                                         className="approve-btn"
-                                                        disabled={processingId === (notif.productId || notif.rentId)}
+                                                        disabled={processingId === requestItemId}
                                                         onClick={() => handleApproveSale({
-                                                            rawId: notif.productId || notif.rentId,
+                                                            rawId: requestItemId,
                                                             isRent: isRentRequest,
-                                                            approveEndpoint: isBuyRequest ? `/api/products/${notif.productId}/approve-sale` : `/api/rents/${notif.rentId}/approve-rent`
                                                         })}
                                                     >
                                                         ✅ Accept
                                                     </button>
                                                     <button
                                                         className="decline-btn"
-                                                        disabled={processingId === (notif.productId || notif.rentId)}
+                                                        disabled={processingId === requestItemId}
                                                         onClick={() => handleDeclineRequest({
-                                                            rawId: notif.productId || notif.rentId,
+                                                            rawId: requestItemId,
                                                             isRent: isRentRequest,
-                                                            rejectEndpoint: isBuyRequest ? `/api/products/${notif.productId}/reject-sale` : `/api/rents/${notif.rentId}/reject-rent`
                                                         })}
                                                     >
                                                         ❌ Reject
@@ -921,7 +985,7 @@ const Profile = () => {
                             ) : (
                                 <div className="chats-threads-list">
                                     {chats.map((chat) => {
-                                        const otherPerson = chat.buyerId === user?.id ? chat.sellerUsername : chat.buyerUsername;
+                                        const otherPerson = chat.participants?.find((name) => name !== user?.username) || 'Student';
                                         const isSelected = activeChat?.id === chat.id;
                                         return (
                                             <div
@@ -935,12 +999,10 @@ const Profile = () => {
                                                 <div className="thread-info">
                                                     <div className="thread-top">
                                                         <span className="thread-username">@{otherPerson}</span>
-                                                        <span className="thread-badge">{chat.productName || 'Item'}</span>
+                                                        <span className="thread-badge">{chat.productTitle || 'Item'}</span>
                                                     </div>
                                                     <div className="thread-last-msg">
-                                                        {chat.messages && chat.messages.length > 0
-                                                            ? chat.messages[chat.messages.length - 1].text
-                                                            : 'Click to start chatting'}
+                                                        {chat.lastMessage || 'Click to start chatting'}
                                                     </div>
                                                 </div>
                                             </div>
@@ -959,21 +1021,25 @@ const Profile = () => {
                                             <button
                                                 type="button"
                                                 className="chat-back-mobile-btn"
-                                                onClick={() => setActiveChat(null)}
+                                                onClick={() => {
+                                                    activeChatIdRef.current = null;
+                                                    setActiveChat(null);
+                                                    navigate('/profile?tab=messages', { replace: true });
+                                                }}
                                                 title="Back to conversations"
                                             >
                                                 ← Back
                                             </button>
                                             <div className="active-chat-header-text">
                                                 <h4>
-                                                    Chat with @{activeChat.buyerId === user?.id ? activeChat.sellerUsername : activeChat.buyerUsername}
+                                                    Chat with @{activeChat.participants?.find((name) => name !== user?.username) || 'Student'}
                                                 </h4>
-                                                <span className="active-item-title">📦 Item: {activeChat.productName}</span>
+                                                <span className="active-item-title">📦 Item: {activeChat.productTitle || 'Conversation'}</span>
                                             </div>
                                         </div>
 
                                         {/* Seller Quick Approve Bar inside Chat */}
-                                        {activeChat.sellerId === user?.id && (
+                                        {activities.some((act) => act.rawId === (activeChat.productId || activeChat.rentId) && act.canApprove) && (
                                             <div className="chat-seller-controls">
                                                 <button
                                                     className="approve-btn small"
@@ -995,15 +1061,15 @@ const Profile = () => {
                                     <div className="chat-messages-scroll">
                                         {messages.length === 0 ? (
                                             <div className="empty-messages-note">
-                                                👋 This is a private 1-on-1 chat between you and @{activeChat.buyerId === user?.id ? activeChat.sellerUsername : activeChat.buyerUsername}.
+                                                👋 This is a private conversation with @{activeChat.participants?.find((name) => name !== user?.username) || 'Student'}.
                                             </div>
                                         ) : (
                                             messages.map((m) => {
-                                                const isMe = m.senderId === user?.id;
+                                                const isMe = m.sender === user?.username;
                                                 return (
-                                                    <div key={m.id} className={`msg-row ${isMe ? 'me' : 'other'}`}>
+                                                    <div key={m._id || `${m.sender}-${m.timestamp}`} className={`msg-row ${isMe ? 'me' : 'other'}`}>
                                                         <div className="msg-bubble">
-                                                            <div className="msg-sender">@{m.senderUsername}</div>
+                                                            <div className="msg-sender">@{m.sender}</div>
                                                             <div className="msg-content">{m.text}</div>
                                                             <div className="msg-time">{new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                                                         </div>
@@ -1015,6 +1081,7 @@ const Profile = () => {
                                     </div>
 
                                     {/* Message input */}
+                                    {chatError && <p className="chat-error" role="alert">{chatError}</p>}
                                     <form className="chat-input-bar" onSubmit={handleSendMessage}>
                                         <input
                                             type="text"

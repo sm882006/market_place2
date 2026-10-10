@@ -394,6 +394,7 @@ router.post('/:id/approve-sale', verifyToken, async (req, res) => {
     // Update related Order
     const order = await Order.findOne({
       itemId: product._id.toString(),
+      buyerUsername,
       status: 'pending',
     }).sort({ createdAt: -1 });
 
@@ -442,6 +443,10 @@ router.post('/:id/reject-sale', verifyToken, async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized to reject this sale' });
     }
 
+    if (product.status !== 'pending' || !product.pendingBuyerUsername) {
+      return res.status(400).json({ message: 'No pending buy request to reject.' });
+    }
+
     const rejectedBuyer = product.pendingBuyerUsername;
 
     product.status = 'available';
@@ -453,6 +458,7 @@ router.post('/:id/reject-sale', verifyToken, async (req, res) => {
     // Update Order
     const order = await Order.findOne({
       itemId: product._id.toString(),
+      buyerUsername: rejectedBuyer,
       status: 'pending',
     }).sort({ createdAt: -1 });
 

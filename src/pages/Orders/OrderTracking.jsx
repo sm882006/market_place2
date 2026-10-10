@@ -24,7 +24,6 @@ export default function OrderTracking() {
 
   const fetchOrders = useCallback(async () => {
     try {
-      setLoading(true);
       const data = await apiFetch('/api/orders');
       setOrders(data);
     } catch (err) {
@@ -41,6 +40,33 @@ export default function OrderTracking() {
     }
     fetchOrders();
   }, [user, navigate, fetchOrders]);
+
+  useEffect(() => {
+    if (!user) return;
+    const refresh = () => fetchOrders();
+    window.addEventListener('focus', refresh);
+    const timer = setInterval(() => {
+      if (!document.hidden) fetchOrders();
+    }, 12000);
+    return () => {
+      window.removeEventListener('focus', refresh);
+      clearInterval(timer);
+    };
+  }, [user, fetchOrders]);
+
+  const handleRequestDecision = async (order, accept) => {
+    const base = order.orderType === 'rent' ? '/api/rents' : '/api/products';
+    const action = order.orderType === 'rent'
+      ? (accept ? 'approve-rent' : 'reject-rent')
+      : (accept ? 'approve-sale' : 'reject-sale');
+    try {
+      await apiFetch(`${base}/${order.itemId}/${action}`, { method: 'POST' });
+      toast.success(accept ? 'Request accepted' : 'Request declined');
+      fetchOrders();
+    } catch (err) {
+      toast.error(err.message || 'Could not update request');
+    }
+  };
 
   const handleUpdateStatus = async (orderId, newStatus, note) => {
     try {
@@ -283,6 +309,12 @@ export default function OrderTracking() {
                 </button>
 
                 {/* Seller Actions */}
+                {isSeller && order.status === 'pending' && (
+                  <>
+                    <button className="order-btn success" onClick={() => handleRequestDecision(order, true)}>Accept Request</button>
+                    <button className="order-btn secondary" onClick={() => handleRequestDecision(order, false)}>Decline Request</button>
+                  </>
+                )}
                 {isSeller && order.status === 'approved' && (
                   <button
                     className="order-btn success"
