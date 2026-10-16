@@ -1,3 +1,4 @@
+import { updateAtlasIP } from "./utils/updateAtlasIP.js";
 import 'dotenv/config';
 import express from 'express';
 import http from 'http';
@@ -290,20 +291,44 @@ app.use((req, res, next) => {
 });
 
 // Connect to DB and start server
-const startServer = async () => {
-  await connectDB();
+// const startServer = async () => {
+//   await connectDB();
 
-  server.listen(PORT, () => {
-    console.log(`\n==================================================`);
-    console.log(`🚀 MarketPICT / CampusCart Backend Active`);
-    console.log(`📡 Server running on http://localhost:${PORT}`);
-    console.log(`⚡ Socket.io enabled for real-time chat & notifications`);
-    console.log(`🗄️ Connected to MongoDB (Mongoose schemas)`);
-    console.log(`==================================================\n`);
-  });
-};
+//   server.listen(PORT, () => {
+//     console.log(`\n==================================================`);
+//     console.log(`🚀 MarketPICT / CampusCart Backend Active`);
+//     console.log(`📡 Server running on http://localhost:${PORT}`);
+//     console.log(`⚡ Socket.io enabled for real-time chat & notifications`);
+//     console.log(`🗄️ Connected to MongoDB (Mongoose schemas)`);
+//     console.log(`==================================================\n`);
+//   });
+// };
 
-startServer().catch((error) => {
-  console.error('[Startup] Unable to start server:', error.message);
-  process.exitCode = 1;
-});
+// startServer().catch((error) => {
+//   console.error('[Startup] Unable to start server:', error.message);
+//   process.exitCode = 1;
+// });
+
+async function startServer() {
+  try {
+    await updateAtlasIP();
+
+    await mongoose.connect(process.env.MONGODB_URI, {
+      serverSelectionTimeoutMS: 30000
+    });
+
+    console.log("MongoDB Connected Successfully");
+
+    app.listen(process.env.PORT || 5000, () => {
+      console.log("Backend server started");
+    });
+  } catch (error) {
+    console.error(
+      "Backend startup failed:",
+      error.response?.data || error.message
+    );
+    process.exit(1);
+  }
+}
+
+startServer();
