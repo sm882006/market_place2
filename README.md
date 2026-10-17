@@ -26,6 +26,14 @@ The former `backend/` directory was a second JSON-store implementation. The appl
 5. Copy `.env.example` to `.env` in this folder. Replace `<db_username>`, `<url_encoded_password>`, and `<cluster_host>` in `MONGODB_URI`. Keep `/campus_marketplace` before the query string. If your password includes a reserved URI character, encode it (for example, `@` becomes `%40`).
 6. Set `JWT_SECRET` to a unique random value of at least 32 characters. Keep `.env` private; Git ignores it. The MongoDB URI belongs on the server, never in a `VITE_` variable or browser code.
 
+## Email verification for signup
+
+Signup sends a six-digit code to the email entered in the form. The account is created and a login token is issued only after the code is verified. Codes expire after 10 minutes, allow five attempts, and can be resent after one minute.
+
+Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, and `SMTP_PASS` in `.env` before starting the API. For Gmail, set `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, use the Gmail address as `SMTP_USER`, and create a Google App Password for `SMTP_PASS`. Set `SMTP_FROM` to the same address or an address your SMTP provider permits. Your regular Gmail password will not work. The SMTP values stay on the server; never put them in `VITE_` variables. If email delivery fails, signup returns an error and no account is created.
+
+The email address entered by the user can be a Gmail address or another valid inbox. `SMTP_USER` is the sending account; it does not limit recipients to Gmail.
+
 The first successful write creates the `campus_marketplace` database and its collection. Mongoose models define `users`, `products`, `rentals`, `orders`, `chats`, `notifications`, `lostfounds`, `wishlists`, `reviews`, and `reports`. You do not need to create tables or fields manually in Atlas. Empty collections may not appear until the app writes records.
 
 ## Run locally
@@ -47,7 +55,7 @@ npm run dev
 
 Open the URL Vite prints (usually `http://localhost:5173`). Vite proxies `/api` and `/socket.io` to port 5001. Check `http://localhost:5001/api/health` for `"database":"connected"`. The API exits on a failed MongoDB connection instead of silently using files.
 
-For a production bundle, run `npm run build`, then `npm run server` and open `http://localhost:5001`. Run `npm run lint` to check code quality. The integration script `node test/integration.test.js` requires a running API and changes database records, so use a separate test database.
+For a production bundle, run `npm run build`, then `npm run server` and open `http://localhost:5001`. Run `npm run lint` to check code quality. The older `test/integration.test.js` script assumes signup immediately creates an account and needs updating for email OTP before it can be run; it also changes database records, so use a separate test database.
 
 ## Data and admin notes
 

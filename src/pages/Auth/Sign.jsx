@@ -6,7 +6,7 @@ import './Sign.css';
 const Sign = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signup } = useAuth();
+  const { signup, verifySignupOtp } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -15,6 +15,9 @@ const Sign = () => {
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [notice, setNotice] = useState('');
 
   const from = location.state?.from || '/profile';
 
@@ -25,6 +28,7 @@ const Sign = () => {
       [name]: value,
     }));
     setError('');
+    setNotice('');
   };
 
   const handleSubmit = async (e) => {
@@ -44,10 +48,44 @@ const Sign = () => {
     setIsLoading(true);
 
     try {
-      await signup(formData.username, formData.email, formData.password);
-      navigate(from, { replace: true });
+      const data = await signup(formData.username, formData.email, formData.password);
+      setPendingEmail(data.email);
+      setNotice(data.message);
     } catch (err) {
       setError(err.message || 'Signup failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerify = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!/^\d{6}$/.test(otp.trim())) {
+      setError('Enter the 6-digit code from your email.');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await verifySignupOtp(pendingEmail, otp.trim());
+      navigate(from, { replace: true });
+    } catch (err) {
+      setError(err.message || 'Verification failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setError('');
+    setNotice('');
+    setIsLoading(true);
+    try {
+      const data = await signup(formData.username, formData.email, formData.password);
+      setOtp('');
+      setNotice(data.message);
+    } catch (err) {
+      setError(err.message || 'Could not resend the code.');
     } finally {
       setIsLoading(false);
     }
@@ -66,13 +104,37 @@ const Sign = () => {
 
         <div className="auth-header">
           <span className="auth-brand-badge">🏛️ MarketPICT</span>
-          <h2>Create your account</h2>
-          <p>Join the student marketplace at PICT Pune</p>
+          <h2>{pendingEmail ? 'Verify your email' : 'Create your account'}</h2>
+          <p>{pendingEmail ? `Enter the code sent to ${pendingEmail}` : 'Join the student marketplace at PICT Pune'}</p>
         </div>
 
         {error && <div className="auth-error-banner">{error}</div>}
+        {notice && <div className="auth-success-banner" role="status">{notice}</div>}
 
-        <form className="auth-form" onSubmit={handleSubmit}>
+        {pendingEmail ? (
+          <form className="auth-form" onSubmit={handleVerify}>
+            <div className="auth-field">
+              <label htmlFor="signup-otp">6-digit email code</label>
+              <input
+                id="signup-otp"
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="[0-9]{6}"
+                maxLength={6}
+                value={otp}
+                onChange={(e) => { setOtp(e.target.value.replace(/\D/g, '')); setError(''); }}
+                required
+                autoFocus
+              />
+            </div>
+            <button type="submit" className="auth-submit-btn" disabled={isLoading}>
+              {isLoading ? 'Verifying...' : 'Verify and create account'}
+            </button>
+            <button type="button" className="auth-text-btn" onClick={handleResend} disabled={isLoading}>Resend code</button>
+            <button type="button" className="auth-text-btn" onClick={() => { setPendingEmail(''); setOtp(''); setNotice(''); setError(''); }} disabled={isLoading}>Change details</button>
+          </form>
+        ) : <form className="auth-form" onSubmit={handleSubmit}>
           <div className="auth-field">
             <label htmlFor="username">Username</label>
             <input
@@ -139,7 +201,7 @@ const Sign = () => {
               Sign in
             </span>
           </p>
-        </form>
+        </form>}
       </div>
     </div>
   );

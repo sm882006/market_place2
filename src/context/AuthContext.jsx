@@ -53,7 +53,14 @@ export const AuthProvider = ({ children }) => {
     initAuth();
   }, []);
 
-  // Signup function
+  const saveSession = (data) => {
+    setToken(data.token);
+    setUser(data.user);
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+  };
+
+  // Request a signup code. This does not authenticate the user.
   const signup = async (username, email, password) => {
     const response = await fetch('/api/signup', {
       method: 'POST',
@@ -67,12 +74,20 @@ export const AuthProvider = ({ children }) => {
       throw new Error(data.message || 'Signup failed');
     }
 
-    // Save to state & localStorage
-    setToken(data.token);
-    setUser(data.user);
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
+    return data;
+  };
 
+  const verifySignupOtp = async (email, otp) => {
+    const response = await fetch('/api/auth/verify-signup-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Verification failed');
+    }
+    saveSession(data);
     return data;
   };
 
@@ -116,6 +131,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     isAuthenticated,
     signup,
+    verifySignupOtp,
     login,
     logout,
   };

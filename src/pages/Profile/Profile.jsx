@@ -136,7 +136,7 @@ const Profile = () => {
             const data = await res.json();
             if (res.ok) {
                 setOtpSent(true);
-                setOtpFeedback(data.message || 'OTP generated! (Check server console in development)');
+                setOtpFeedback(data.message || 'Check your email for the code.');
             } else {
                 setOtpFeedback(data.message || 'Failed to send OTP.');
             }
@@ -570,9 +570,11 @@ const Profile = () => {
                     ) : (
                         <div style={{ marginTop: '8px' }}>
                             <p style={{ margin: '0 0 8px', fontSize: '0.78rem', color: '#1e3a8a' }}>
-                                Verify your college credentials with a 6-digit OTP.
+                                {displayUser?.email?.endsWith('@pict.edu')
+                                    ? 'Verify your college credentials with a 6-digit code sent to your email.'
+                                    : 'A @pict.edu email is required for the student badge.'}
                             </p>
-                            {!otpSent ? (
+                            {displayUser?.email?.endsWith('@pict.edu') && (!otpSent ? (
                                 <button
                                     onClick={handleSendOtp}
                                     disabled={otpLoading}
@@ -607,7 +609,7 @@ const Profile = () => {
                                         </button>
                                     </div>
                                 </form>
-                            )}
+                            ))}
                             {otpFeedback && (
                                 <div style={{ marginTop: '6px', fontSize: '0.75rem', color: '#0369a1', fontWeight: 500 }}>
                                     {otpFeedback}

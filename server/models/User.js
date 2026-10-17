@@ -38,6 +38,14 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    otpLastSentAt: {
+      type: Date,
+      default: null,
+    },
+    verificationAttempts: {
+      type: Number,
+      default: 0,
+    },
     collegeRollNo: {
       type: String,
       default: '',
@@ -85,6 +93,8 @@ userSchema.methods.toSafeObject = function () {
   delete obj.password;
   delete obj.verificationCode;
   delete obj.otpExpiresAt;
+  delete obj.otpLastSentAt;
+  delete obj.verificationAttempts;
   return obj;
 };
 

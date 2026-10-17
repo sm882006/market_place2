@@ -1,1 +1,23 @@
 @import './Login.css';
+
+.auth-success-banner {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  font-size: 0.85rem;
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-bottom: 18px;
+}
+
+.auth-text-btn {
+  color: var(--primary, #4f46e5);
+  font-weight: 600;
+  cursor: pointer;
+  align-self: center;
+}
+
+.auth-text-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

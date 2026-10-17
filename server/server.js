@@ -30,6 +30,7 @@ import Rental from './models/Rental.js';
 import Order from './models/Order.js';
 import LostFound from './models/LostFound.js';
 import mongoose from 'mongoose';
+import { isSignupEmailConfigured } from './utils/signupEmail.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -311,7 +312,17 @@ app.use((req, res, next) => {
 
 async function startServer() {
   try {
-    await updateAtlasIP();
+    if (!isSignupEmailConfigured()) {
+      console.warn('[Startup] Email signup is disabled: set SMTP_HOST, SMTP_USER, and SMTP_PASS in .env.');
+    }
+    try {
+      await updateAtlasIP();
+    } catch (atlasErr) {
+      console.warn(
+        '[Atlas IP] Could not auto-whitelist IP (proceeding anyway):',
+        atlasErr.response?.data?.detail || atlasErr.response?.data || atlasErr.message
+      );
+    }
 
     await mongoose.connect(process.env.MONGODB_URI, {
       serverSelectionTimeoutMS: 30000

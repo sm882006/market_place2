@@ -467,7 +467,7 @@ const Home = () => {
         {/* ── 6. Campus Trust Protocol (Minimal 1-Row Glass Strip) ── */}
         <section className="campus-trust-strip">
           <div className="trust-pillar">
-            <div className="trust-icon-box">🛡️</div>
+            
             <div>
               <div className="trust-heading">100% Verified PICT Students</div>
               <div className="trust-sub">Only official @pict.edu institutional emails allowed.</div>
@@ -475,7 +475,7 @@ const Home = () => {
           </div>
           <div className="trust-divider" />
           <div className="trust-pillar">
-            <div className="trust-icon-box">🤝</div>
+            
             <div>
               <div className="trust-heading">Quad &amp; Library Meetups</div>
               <div className="trust-sub">Safe in-person inspection before any UPI payment.</div>
@@ -483,7 +483,7 @@ const Home = () => {
           </div>
           <div className="trust-divider" />
           <div className="trust-pillar">
-            <div className="trust-icon-box">⚡</div>
+            
             <div>
               <div className="trust-heading">Zero Brokerage Fees</div>
               <div className="trust-sub">100% peer-to-peer student community initiative.</div>

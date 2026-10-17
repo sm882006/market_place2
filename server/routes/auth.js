@@ -1,6 +1,9 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
+import { createHash, randomInt, timingSafeEqual } from 'node:crypto';
 import User from '../models/User.js';
+import PendingSignup from '../models/PendingSignup.js';
+import { isSignupEmailConfigured, sendEmailOtp } from '../utils/signupEmail.js';
 import { verifyToken, generateToken } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -14,17 +17,35 @@ const formatUser = (user) => {
   };
 };
 
-// POST /api/signup & /api/auth/register
+const OTP_LIFETIME_MS = 10 * 60 * 1000;
+const OTP_COOLDOWN_MS = 60 * 1000;
+const MAX_OTP_ATTEMPTS = 5;
+const hashOtp = (email, otp) => createHash('sha256')
+  .update(`${process.env.JWT_SECRET}:${email}:${otp}`)
+  .digest('hex');
+
+// POST /api/signup & /api/auth/register: request an email verification code
 export const handleSignup = async (req, res) => {
   try {
     const { username, email, password, collegeRollNo, department, phone } = req.body;
 
-    if (!username || !email || !password) {
+    if (typeof username !== 'string' || typeof email !== 'string' || typeof password !== 'string' ||
+        !username.trim() || !email.trim() || !password) {
       return res.status(400).json({ message: 'Username, email, and password are required.' });
     }
 
     const trimmedUsername = username.trim();
     const trimmedEmail = email.trim().toLowerCase();
+    if (trimmedUsername.length < 3 || password.length < 6 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      return res.status(400).json({ message: 'Enter a valid email, a username of at least 3 characters, and a password of at least 6 characters.' });
+    }
+    if (!isSignupEmailConfigured()) {
+      return res.status(503).json({
+        message: process.env.NODE_ENV === 'production'
+          ? 'Email signup is temporarily unavailable. Please contact support.'
+          : 'Email sending is not configured. Set SMTP_USER and SMTP_PASS in the server .env file, then restart the backend.',
+      });
+    }
 
     // Check duplicate
     const existingUser = await User.findOne({
@@ -38,31 +59,110 @@ export const handleSignup = async (req, res) => {
       return res.status(409).json({ message: 'Email is already registered.' });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const pending = await PendingSignup.findOne({ email: trimmedEmail });
+    if (pending && pending.lastSentAt > new Date(Date.now() - OTP_COOLDOWN_MS)) {
+      return res.status(429).json({ message: 'Please wait one minute before requesting another code.' });
+    }
 
-    const isStudentEmail = trimmedEmail.endsWith('@pict.edu') || trimmedEmail.endsWith('.edu');
-
-    const newUser = await User.create({
+    const otp = randomInt(100000, 1000000).toString();
+    const now = new Date();
+    const otpExpiresAt = new Date(now.getTime() + OTP_LIFETIME_MS);
+    const signup = await PendingSignup.findOneAndUpdate(
+      { email: trimmedEmail },
+      { $set: {
       username: trimmedUsername,
       email: trimmedEmail,
-      password: hashedPassword,
+      password: await bcrypt.hash(password, 10),
       collegeRollNo: collegeRollNo || '',
       department: department || '',
       phone: phone || '',
-      role: 'student',
-      isVerified: isStudentEmail,
-    });
+      otpHash: hashOtp(trimmedEmail, otp),
+      otpExpiresAt,
+      lastSentAt: now,
+      expiresAt: otpExpiresAt,
+      attempts: 0,
+      } },
+      { upsert: true, new: true }
+    );
 
-    const token = generateToken(newUser);
-    return res.status(201).json({
-      message: 'User registered successfully',
-      token,
-      user: formatUser(newUser),
+    try {
+      await sendEmailOtp(trimmedEmail, otp);
+    } catch (mailError) {
+      await PendingSignup.deleteOne({ _id: signup._id, otpHash: signup.otpHash });
+      console.error('[AUTH ERROR] Signup email failed:', mailError);
+      return res.status(503).json({ message: 'Could not send the verification email. Please try again later.' });
+    }
+
+    return res.status(202).json({
+      message: `A 6-digit verification code was sent to ${trimmedEmail}.`,
+      email: trimmedEmail,
     });
   } catch (err) {
     console.error('[AUTH ERROR] Signup failed:', err);
     return res.status(500).json({ message: 'Internal server error during registration.' });
+  }
+};
+
+// POST /api/auth/verify-signup-otp: create the user only after email ownership is proved
+export const handleVerifySignupOtp = async (req, res) => {
+  try {
+    const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+    const otp = typeof req.body.otp === 'string' ? req.body.otp.trim() : '';
+    if (!email || !/^\d{6}$/.test(otp)) {
+      return res.status(400).json({ message: 'Enter the 6-digit verification code.' });
+    }
+
+    const signup = await PendingSignup.findOneAndUpdate(
+      { email, otpExpiresAt: { $gt: new Date() }, attempts: { $lt: MAX_OTP_ATTEMPTS } },
+      { $inc: { attempts: 1 } },
+      { new: true }
+    );
+    if (!signup) {
+      return res.status(400).json({ message: 'Code expired or too many attempts. Please request a new code.' });
+    }
+
+    const actual = Buffer.from(hashOtp(email, otp), 'hex');
+    const expected = Buffer.from(signup.otpHash, 'hex');
+    if (!timingSafeEqual(actual, expected)) {
+      return res.status(400).json({ message: 'Invalid verification code.' });
+    }
+
+    const claimed = await PendingSignup.findOneAndDelete({
+      _id: signup._id,
+      otpHash: signup.otpHash,
+      otpExpiresAt: { $gt: new Date() },
+      attempts: { $lte: MAX_OTP_ATTEMPTS },
+    });
+    if (!claimed) {
+      return res.status(400).json({ message: 'Code expired or already used. Please request a new code.' });
+    }
+
+    const existingUser = await User.findOne({ $or: [{ username: claimed.username }, { email }] });
+    if (existingUser) {
+      return res.status(409).json({ message: 'Username or email is already registered. Please sign in or choose another username.' });
+    }
+
+    const user = await User.create({
+      username: claimed.username,
+      email: claimed.email,
+      password: claimed.password,
+      collegeRollNo: claimed.collegeRollNo,
+      department: claimed.department,
+      phone: claimed.phone,
+      role: 'student',
+      isVerified: claimed.email.endsWith('@pict.edu'),
+    });
+    return res.status(201).json({
+      message: 'Email verified and account created successfully.',
+      token: generateToken(user),
+      user: formatUser(user),
+    });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(409).json({ message: 'Username or email is already registered.' });
+    }
+    console.error('[AUTH ERROR] Signup verification failed:', err);
+    return res.status(500).json({ message: 'Internal server error verifying signup.' });
   }
 };
 
@@ -148,24 +248,37 @@ export const handleSendOtp = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found.' });
     }
+    if (!user.email.endsWith('@pict.edu')) {
+      return res.status(400).json({ message: 'A @pict.edu email is required for student verification.' });
+    }
+    if (!isSignupEmailConfigured()) {
+      return res.status(503).json({ message: 'Email verification is unavailable. Please contact support.' });
+    }
+    if (user.otpLastSentAt && user.otpLastSentAt > new Date(Date.now() - OTP_COOLDOWN_MS)) {
+      return res.status(429).json({ message: 'Please wait one minute before requesting another code.' });
+    }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-    user.verificationCode = otp;
-    user.otpExpiresAt = expiry;
+    const otp = randomInt(100000, 1000000).toString();
+    user.verificationCode = hashOtp(user.email, otp);
+    user.otpExpiresAt = new Date(Date.now() + OTP_LIFETIME_MS);
+    user.otpLastSentAt = new Date();
+    user.verificationAttempts = 0;
     await user.save();
 
-    console.log(`\n==================================================`);
-    console.log(`[CAMPUS STUDENT VERIFICATION OTP]`);
-    console.log(`User: ${user.username} (${user.email})`);
-    console.log(`Code: ${otp}`);
-    console.log(`Expires in: 10 minutes`);
-    console.log(`==================================================\n`);
+    try {
+      await sendEmailOtp(user.email, otp, 'student verification');
+    } catch (mailError) {
+      user.verificationCode = null;
+      user.otpExpiresAt = null;
+      user.otpLastSentAt = null;
+      await user.save();
+      console.error('[AUTH ERROR] Student verification email failed:', mailError);
+      return res.status(503).json({ message: 'Could not send the verification email. Please try again later.' });
+    }
 
     return res.json({
       success: true,
-      message: `OTP sent to ${user.email}. (Check server console for OTP in development)`,
+      message: `OTP sent to ${user.email}.`,
     });
   } catch (err) {
     console.error('[AUTH ERROR] Send OTP failed:', err);
@@ -186,17 +299,26 @@ export const handleVerifyOtp = async (req, res) => {
       return res.status(404).json({ message: 'User not found.' });
     }
 
-    if (!user.verificationCode || user.verificationCode !== otp.trim()) {
-      return res.status(400).json({ message: 'Invalid verification code.' });
+    if (!user.email.endsWith('@pict.edu')) {
+      return res.status(400).json({ message: 'A @pict.edu email is required for student verification.' });
     }
 
-    if (user.otpExpiresAt && new Date() > user.otpExpiresAt) {
-      return res.status(400).json({ message: 'Verification code has expired. Please request a new one.' });
+    if (!user.verificationCode || !user.otpExpiresAt || user.otpExpiresAt <= new Date() ||
+        user.verificationAttempts >= MAX_OTP_ATTEMPTS) {
+      return res.status(400).json({ message: 'Code expired or too many attempts. Please request a new code.' });
+    }
+    const actual = Buffer.from(hashOtp(user.email, String(otp).trim()), 'hex');
+    const expected = Buffer.from(user.verificationCode, 'hex');
+    user.verificationAttempts += 1;
+    if (!timingSafeEqual(actual, expected)) {
+      await user.save();
+      return res.status(400).json({ message: 'Invalid verification code.' });
     }
 
     user.isVerified = true;
     user.verificationCode = null;
     user.otpExpiresAt = null;
+    user.verificationAttempts = 0;
     await user.save();
 
     return res.json({
@@ -280,6 +402,7 @@ export const handleGetPublicProfile = async (req, res) => {
 // Mount route paths
 router.post('/signup', handleSignup);
 router.post('/register', handleSignup);
+router.post('/verify-signup-otp', handleVerifySignupOtp);
 router.post('/login', handleLogin);
 router.get('/profile', verifyToken, handleGetProfile);
 router.get('/me', verifyToken, handleGetProfile);
