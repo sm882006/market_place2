@@ -40,7 +40,7 @@ export default function AdminDashboard() {
       navigate('/login');
       return;
     }
-    if (user.role !== 'admin' && user.username !== 'admin') {
+    if (user.role !== 'admin' && user.username?.toLowerCase() !== 'admin') {
       toast.error('Access denied: Admin privileges required.');
       navigate('/');
       return;

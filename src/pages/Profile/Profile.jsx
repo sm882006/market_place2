@@ -659,7 +659,7 @@ const Profile = () => {
                         <span>Orders &amp; Tracking</span>
                     </button>
 
-                    {(displayUser?.role === 'admin' || displayUser?.username === 'admin') && (
+                    {(displayUser?.role === 'admin' || displayUser?.username?.toLowerCase() === 'admin') && (
                         <button className="option-btn" onClick={() => navigate('/admin')}>
                             <span className="opt-icon">🛡️</span>
                             <span>Admin Panel</span>

@@ -18,7 +18,7 @@ function Navbar() {
   const getNavClass = ({ isActive }) =>
     `navbar-link ${isActive ? "active" : ""}`;
 
-  const isAdmin = user?.role === 'admin' || user?.username === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.username?.toLowerCase() === 'admin';
 
   return (
     <header className="navbar">
